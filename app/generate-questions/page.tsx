@@ -13,13 +13,14 @@ import Link from 'next/link'
 
 interface Message {
   type: 'user' | 'assistant'
-  content: string
+  content: string | undefined
   timestamp: Date
 }
 
 interface FormState {
   subject: string
   topic: string
+  type: string
   difficulty: string
   grade: string
   numQuestions: string
@@ -30,7 +31,7 @@ export default function GenerateQuestionsPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       type: 'assistant',
-      content: 'Hello! 👋 I&apos;m ready to help you generate custom MCQs. Let&apos;s start by filling in some details. What subject would you like to create questions for? (Physics, Chemistry, Maths, or Biology)',
+      content: "Hello! 👋 I'm ready to help you generate custom MCQs. Let's start by filling in some details. What subject would you like to create questions for? (Physics, Chemistry, Maths, or Biology)",
       timestamp: new Date(),
     },
   ])
@@ -40,6 +41,7 @@ export default function GenerateQuestionsPage() {
   const [formData, setFormData] = useState<FormState>({
     subject: '',
     topic: '',
+    type: '',
     difficulty: '',
     grade: '',
     numQuestions: '',
@@ -66,6 +68,12 @@ export default function GenerateQuestionsPage() {
     {
       label: 'Topic',
       key: 'topic',
+      message: 'Which type of questions? (Numeric / Non-numeric)',
+    },
+    {
+      label: 'Type',
+      key: 'type',
+      options: ['Numeric', 'Non-Numeric'],
       message: 'What difficulty level would you prefer? (Easy, Medium, Hard)',
     },
     {
@@ -85,6 +93,10 @@ export default function GenerateQuestionsPage() {
       key: 'numQuestions',
       message: 'Any additional requirements or prompts? (Optional - you can skip this)',
     },
+    {
+      label: 'Additional Prompt',
+      key: 'additionalPrompt'
+    }
   ]
 
   const handleSendMessage = async () => {
@@ -114,7 +126,7 @@ export default function GenerateQuestionsPage() {
       setTimeout(() => {
         const assistantMessage: Message = {
           type: 'assistant',
-          content: steps[step + 1].message,
+          content: steps[step].message,
           timestamp: new Date(),
         }
         setMessages(prev => [...prev, assistantMessage])
@@ -139,7 +151,7 @@ export default function GenerateQuestionsPage() {
 
         const assistantMessage: Message = {
           type: 'assistant',
-          content: `Perfect! I've generated ${data.questions?.length || 0} questions for you. You can review them below and download if you&apos;re satisfied.`,
+          content: `Perfect! I've generated ${data.questions?.length || 0} questions for you. You can review them below and download if you're satisfied.`,
           timestamp: new Date(),
         }
         setMessages(prev => [...prev, assistantMessage])
@@ -200,7 +212,7 @@ export default function GenerateQuestionsPage() {
             <Card className="bg-card border-border h-96 lg:h-screen lg:max-h-96 flex flex-col">
               <CardHeader className="border-b border-border">
                 <CardTitle>Question Generation Assistant</CardTitle>
-                <CardDescription>Let&apos;s create your MCQs together</CardDescription>
+                <CardDescription>Let's create your MCQs together</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message, index) => (
@@ -243,7 +255,7 @@ export default function GenerateQuestionsPage() {
                   <Input
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
                         handleSendMessage()
@@ -318,6 +330,12 @@ export default function GenerateQuestionsPage() {
                       <p className="font-medium text-foreground">{formData.topic}</p>
                     </div>
                   )}
+                  {formData.type && (
+                    <div>
+                      <span className="text-muted-foreground">Type:</span>
+                      <p className="font-medium text-foreground">{formData.type}</p>
+                    </div>
+                  )}
                   {formData.difficulty && (
                     <div>
                       <span className="text-muted-foreground">Difficulty:</span>
@@ -334,6 +352,12 @@ export default function GenerateQuestionsPage() {
                     <div>
                       <span className="text-muted-foreground">Questions:</span>
                       <p className="font-medium text-foreground">{formData.numQuestions}</p>
+                    </div>
+                  )}
+                  {formData.additionalPrompt && (
+                    <div>
+                      <span className="text-muted-foreground">Additional:</span>
+                      <p className="font-medium text-foreground">{formData.additionalPrompt}</p>
                     </div>
                   )}
                 </CardContent>

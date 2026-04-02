@@ -12,7 +12,7 @@ AI = AIbot()
 def generate_options():
     try:
         data = request.get_json()
-        print(data)
+        print(f"[INFO] Request Data: {data}")
         question = data.get('question','')
         questionType = data.get('questionType','')
         additional = data.get('additionalPrompt','')
@@ -24,12 +24,19 @@ def generate_options():
 def generate_questions():
     try:
         data = request.get_json()
-        print(data)
-        question = data.get('question','')
-        questionType = data.get('questionType','')
-        additional = data.get('additionalPrompt','')
-        options = AI.getOptions(question=question,type=questionType,additional_prompt=additional)
-        return jsonify(options)
+        print(f"[INFO] Request Data: {data}")
+        subject = data.get('subject','')
+        topic = data.get('topic','')
+        type = data.get('type','')
+        difficulty = data.get('difficulty','')
+        grade = data.get('grade','')
+        numQuestions = int(data.get('numQuestions',0))
+
+        options = AI.getQuestions(subject, topic, type, difficulty, grade, numQuestions)
+        list_options = options.split('\n===SEP===\n')
+
+        return jsonify(list_options)
+    
     except Exception as e:
         return {'status':400, 'error':e}
 

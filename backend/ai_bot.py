@@ -38,10 +38,10 @@ any area of cross section of the conductor will be 2400 C.
         Format for JSON to STRICTLY FOLLOW: {correctAnswer:string, "options": [{'type':'fact', 'text':'string'}, {'type':'process', 'text':'string'}, {'type':'accuracy', 'text': 'string'}]} 
         '''
     
-    def getQuestions(self, subject: str, topic: str, diffi: str, type: str, qty: int) -> str:
+    def getQuestions(self, subject: str, topic: str, type: str, diffi: str, grade:str, qty: int) -> str:
         '''
             ### Input
-            #### Takes subject(PCMB), topic, difficulty (easy,medium,hard), type (non-numeric/numeric), and quantity (integer) 
+            #### Takes subject(PCMB), topic, difficulty (easy,medium,hard), Grade(9,10,11,12), type (non-numeric/numeric), and quantity (integer) 
             ### Returns
             #### Output of the AI response, string of questions seperated by \n===SEP===\n
         '''
@@ -54,6 +54,7 @@ any area of cross section of the conductor will be 2400 C.
                     {"role": "user", "content": f'''Generate Question(s) for Subject: {subject}
                      Topic: {topic}
                      difficulty: {diffi}
+                     Grade: {grade}
                      type: {type}
                      quantity: {qty}
                      '''}
@@ -61,7 +62,9 @@ any area of cross section of the conductor will be 2400 C.
                 reasoning={'effort':'low'}
             )
 
-            return response.choices[0].message.content
+            data = response.choices[0].message.content
+            # print(data)
+            return data
         
     def getOptions(self, question: str, type: str, additional_prompt: Optional[str]=None) -> dict:
         '''
