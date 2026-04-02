@@ -1,3 +1,4 @@
+const API_URL = 'http://localhost:5000'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -11,15 +12,37 @@ export async function POST(request: Request) {
     // 4. Create user in Supabase
     // 5. Return success or error
 
-    // Placeholder response
-    return Response.json(
-      {
-        success: true,
-        message: 'Account created successfully',
-        user: { username, email },
-      },
-      { status: 201 }
-    )
+    const response = await fetch(API_URL+'/api/signup',
+      {'headers':{'Content-Type':'application/json'},
+      'method':'POST',
+      'body': JSON.stringify({username,email,password})
+    
+    })
+    if(!response.ok){
+      return response
+    }
+    
+    const data = await response.json()
+
+    if(response.status===405){
+      console.log('Account already exists in DB.')
+      return response
+    }
+    if(response.status===409){
+      console.log('Account already exists in DB.')
+      return response
+    }
+    if(response.status===200){
+
+      return Response.json(
+        {
+          success: true,
+          message: 'Account created successfully',
+          token:  data.token,
+        },
+        { status: 200 }
+      )
+    }
   } catch (error) {
     console.error('Signup error:', error)
     return Response.json(

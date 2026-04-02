@@ -1,5 +1,6 @@
-pip
-transformers
 spacy
 openai
 gradio
+Flask-JWT-Extended
+Flask
+Flask-cors

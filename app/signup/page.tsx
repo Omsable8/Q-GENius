@@ -22,7 +22,7 @@ export default function SignupPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
@@ -57,10 +57,12 @@ export default function SignupPage() {
         toast.error(data.message || 'Signup failed')
         return
       }
-
+      // Store user token in localStorage for now
+      localStorage.setItem('token',data)
+      console.log(data.token)
       toast.success('Account created successfully!')
       // Redirect to login or dashboard
-      window.location.href = '/login'
+      window.location.href = '/dashboard'
     } catch (error) {
       toast.error('An error occurred. Please try again.')
       console.error(error)

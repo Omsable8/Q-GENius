@@ -20,7 +20,7 @@ export default function LoginPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
@@ -48,7 +48,8 @@ export default function LoginPage() {
         toast.error(data.message || 'Login failed')
         return
       }
-
+      localStorage.setItem('token',data.token)
+      console.log(data)
       toast.success('Login successful!')
       // Redirect to dashboard
       window.location.href = '/dashboard'
