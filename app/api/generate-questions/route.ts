@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     // 3. Call your Python Flask backend or AI model
     // 4. Generate MCQs based on parameters
     // 5. Return array of generated questions
-
+    
     // Example response format
     const mockQuestions = [
       `Question 1: What is the definition of ${topic}?

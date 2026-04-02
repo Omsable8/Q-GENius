@@ -2,7 +2,7 @@ from openrouter import OpenRouter
 import os
 from dotenv import load_dotenv
 from typing import Optional
-
+import json
 load_dotenv()
 
 class AIbot():
@@ -12,11 +12,11 @@ class AIbot():
         self.system_prompt_questions = '''You are a MCQ generator. 
         Grade - 9-12th Indian grades; subjects: Phy,Chem,Math,Bio. 
         Make sure the question is suitable for a multiple choice type question.
-        Return only appropriate Question(s) (no options, those will be generated seperately) based on difficulty, subject and quantity provided in the prompt.
-        If there are multiple questions seperate them with '\n===SEP===\n' Tag.'''
+        Return only appropriate Question(s) (DO NOT GIVE I REPEAT DO NOT GIVE the 4 options, GIVE ONLY QUESTION) based on difficulty, subject and quantity provided in the prompt.
+        IF and only IF there are multiple questions seperate them with '\n===SEP===\n' Tag. Otherwise do not use delimeter'''
         
         self.system_prompt_options = '''You are an Options generator for a given MCQ. 
-        Grade: 9-12th Indian grades. Return only 4 appropriate options in JSON format (with keys: correct, [factual,process, accuracy]). 
+        Grade: 9-12th Indian grades. Return only 4 appropriate options in JSON format.
         Format for 4 options:
             1) Correct: One of the 4 options is the correct answer.
             2) Process distractor: Wrong in terms of process  (evaluator will know if student made mistake while solving; mistake in process/approach)
@@ -35,10 +35,16 @@ lated for two minutes, but the area of cross-section is not known.
         - Accuracy distractor: The amount of charge which passed through
 any area of cross section of the conductor will be 2400 C.
 
+        Format for JSON to STRICTLY FOLLOW: {correctAnswer:string, "options": [{'type':'fact', 'text':'string'}, {'type':'process', 'text':'string'}, {'type':'accuracy', 'text': 'string'}]} 
         '''
     
     def getQuestions(self, subject: str, topic: str, diffi: str, type: str, qty: int) -> str:
-
+        '''
+            ### Input
+            #### Takes subject(PCMB), topic, difficulty (easy,medium,hard), type (non-numeric/numeric), and quantity (integer) 
+            ### Returns
+            #### Output of the AI response, string of questions seperated by \n===SEP===\n
+        '''
         with OpenRouter(api_key=self.api_key) as client:
             
             response = client.chat.send(
@@ -52,12 +58,18 @@ any area of cross section of the conductor will be 2400 C.
                      quantity: {qty}
                      '''}
                 ],
-                reasoning={'effort':'minimal'}
+                reasoning={'effort':'low'}
             )
 
             return response.choices[0].message.content
         
-    def getOptions(self, question: str, type: str, additional_prompt: Optional[str]=None) -> str:
+    def getOptions(self, question: str, type: str, additional_prompt: Optional[str]=None) -> dict:
+        '''
+            ### Input
+            #### Takes Question(PCMB), type (non-numeric/numeric), and additional prompt 
+            ### Returns
+            #### Output of the AI response dictionary: {correctAnswer:string, options:[{type:fact,text:string},{type:process, text:string}, {type:accuracy,text:string}]}
+        '''
 
         with OpenRouter(api_key=self.api_key) as client:
             response = client.chat.send(
@@ -65,31 +77,18 @@ any area of cross section of the conductor will be 2400 C.
                 messages=[
                     {"role": "system", "content": self.system_prompt_options},
                     {"role": "user", "content": f'Generate Options for Question: {question}; type: {type}; Additonal instructions: {additional_prompt}'}
-                ]
-                # ,
-                # response_format={'type':'json_schema', 'json_schema':{
-                #         "name":"options", "strict":"true",
-                #         'properties':{'correctAnswer':{'type':'string'}}, 
-                #         'schema':{
-                #             'type':'object',
-                #             "properties":{
-                #                 'fact':{'type':'string'},
-                #                 'process':{'type':'string'},
-                #                 'accuracy':{'type':'string'},
-                #             }
-                #         },
-                #         'required':['correctAnswer','process','fact','accuracy']
-                        
-                #     }
-
-                # }       
+                ], reasoning={'effort':'medium'}
             )
-
-            return response.choices[0].message.content
+            ai_response = response.choices[0].message.content
+            # print(ai_response)
+            answer_and_options = json.loads(ai_response)
+            answer_and_options['question'] = question
+            return answer_and_options
         
-# example use:
-aibot = AIbot()
-questions = aibot.getQuestions("chemistry","equillibrium","easy", "non-numeric",1)
-print(questions)
-options = aibot.getOptions(question=questions,type="non-numeric")
-print(options)
+if '__main__' == __name__:
+    # example use:
+    aibot = AIbot()
+    questions = aibot.getQuestions("chemistry","equillibrium","easy", "non-numeric",1)
+    print(questions)
+    options = aibot.getOptions(question=questions,type="non-numeric")
+    print(options)

@@ -1,3 +1,4 @@
+const API_URL = 'http://localhost:5000'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -11,31 +12,22 @@ export async function POST(request: Request) {
     // 4. Parse response and format distractors
     // 5. Return three types: correct, fact, process, accuracy
 
+    const response = await fetch(API_URL+'/api/generate_options', {
+        method:'POST',
+        headers: { "Content-Type": "application/json" },
+        body:JSON.stringify({ question, questionType, additionalPrompt })
+      })
     
-    // Example response format
-    const mockResponse = {
-      question,
-      correctAnswer: "Sample correct answer",
-      options: [
-        {
-          type: "fact",
-          text: "Sample fact-based distractor",
-          explanation: "This distractor tests fundamental knowledge misconceptions"
-        },
-        {
-          type: "process",
-          text: "Sample process-based distractor",
-          explanation: "This distractor tests application and methodology errors"
-        },
-        {
-          type: "accuracy",
-          text: "Sample accuracy-based distractor",
-          explanation: "This distractor tests precision and rounding errors"
-        }
-      ]
+    if (!response.ok) {
+      console.log(response)
+      return Response.json({ success: false, error: `HTTP ${response.status}` })
     }
+    
+    const data = await response.json()
+    return Response.json(data, { status: 200 })
+    
+    
 
-    return Response.json(mockResponse, { status: 200 })
   } catch (error) {
     console.error('Generation error:', error)
     

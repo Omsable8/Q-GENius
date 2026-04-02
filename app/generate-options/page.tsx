@@ -31,7 +31,22 @@ export default function GenerateOptionsPage() {
     questionType: 'non-numerical',
     additionalPrompt: '',
   })
-  const [results, setResults] = useState<GenerationResult | null>(null)
+  const [results, setResults] = useState<GenerationResult | null>({
+      "question":'Sample question',
+      "correctAnswer": "Sample correct answer",
+      "options": [
+        {
+          type: "fact",
+          text: "Sample fact-based distractor"
+        },
+        {
+          type: "process",
+          text: "Sample process-based distractor"
+        },
+        {
+          type: "accuracy",
+          text: "Sample accuracy-based distractor"
+        }]})
   const [ratings, setRatings] = useState<{ [key: string]: number }>({})
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -39,7 +54,7 @@ export default function GenerateOptionsPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!formData.question.trim()) {
@@ -98,7 +113,7 @@ export default function GenerateOptionsPage() {
     if (!results) return
 
     const content = `Question: ${results.question}
-
+    Correct answer: ${results.correctAnswer}
 Options:
 ${results.options.map(opt => `${opt.type.charAt(0).toUpperCase() + opt.type.slice(1)} - ${opt.text}`).join('\n\n')}
 `
@@ -136,7 +151,7 @@ ${results.options.map(opt => `${opt.type.charAt(0).toUpperCase() + opt.type.slic
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Generate Options</h1>
           <p className="text-muted-foreground text-lg">
-            Enter a question and we&apos;ll generate three types of scientifically-designed distractors
+            Enter a question and we'll generate three types of scientifically-designed distractors
           </p>
         </div>
 
@@ -318,7 +333,7 @@ ${results.options.map(opt => `${opt.type.charAt(0).toUpperCase() + opt.type.slic
               Rate Limit Exceeded
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You&apos;ve reached your generation limit for this hour. Please try again later or upgrade your plan for unlimited generations.
+              You've reached your generation limit for this hour. Please try again later or upgrade your plan for unlimited generations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 my-4">
