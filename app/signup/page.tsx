@@ -58,8 +58,8 @@ export default function SignupPage() {
         return
       }
       // Store user token in localStorage for now
-      localStorage.setItem('token',data)
-      console.log(data.token)
+      // localStorage.setItem('token',data)
+      // console.log(data.token)
       toast.success('Account created successfully!')
       // Redirect to login or dashboard
       window.location.href = '/dashboard'

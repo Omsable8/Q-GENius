@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     // 4. Set HTTP-only cookie
     const response = await fetch(API_URL+'/api/login',{
       'headers':{'Content-Type':'application/json'},
+      'credentials':'include',
       'method': 'POST',
       'body': JSON.stringify({email, password})
     })
@@ -22,7 +23,6 @@ export async function POST(request: Request) {
       return response
     }
 
-    const data = await response.json()
     if(response.status === 401){
       return Response.json(
         {
@@ -42,16 +42,7 @@ export async function POST(request: Request) {
       )
     }
     if(response.status===200){
-
-      return Response.json(
-        {
-          success: true,
-          message: 'Login successful',
-          user: { email },
-          token: data.token
-        },
-        { status: 200 }
-      )
+      return response
     }
   } catch (error) {
     console.error('Login error:', error)

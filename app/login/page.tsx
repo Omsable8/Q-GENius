@@ -36,6 +36,7 @@ export default function LoginPage() {
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials:'include',
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -48,8 +49,6 @@ export default function LoginPage() {
         toast.error(data.message || 'Login failed')
         return
       }
-      localStorage.setItem('token',data.token)
-      console.log(data)
       toast.success('Login successful!')
       // Redirect to dashboard
       window.location.href = '/dashboard'

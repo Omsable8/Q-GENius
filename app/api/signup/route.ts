@@ -21,8 +21,6 @@ export async function POST(request: Request) {
     if(!response.ok){
       return response
     }
-    
-    const data = await response.json()
 
     if(response.status===405){
       console.log('Account already exists in DB.')
@@ -33,15 +31,7 @@ export async function POST(request: Request) {
       return response
     }
     if(response.status===200){
-
-      return Response.json(
-        {
-          success: true,
-          message: 'Account created successfully',
-          token:  data.token,
-        },
-        { status: 200 }
-      )
+        return response
     }
   } catch (error) {
     console.error('Signup error:', error)

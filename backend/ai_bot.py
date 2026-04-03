@@ -5,6 +5,9 @@ from typing import Optional
 import json
 load_dotenv()
 
+from debug_log import DebugLogger
+logger = DebugLogger(disable=False,filename=__file__)
+
 class AIbot():
     def __init__(self):
         self.api_key = os.getenv('OPENROUTER_API_KEY')
@@ -13,7 +16,7 @@ class AIbot():
         Grade - 9-12th Indian grades; subjects: Phy,Chem,Math,Bio. 
         Make sure the question is suitable for a multiple choice type question.
         Return only appropriate Question(s) (DO NOT GIVE I REPEAT DO NOT GIVE the 4 options, GIVE ONLY QUESTION) based on difficulty, subject and quantity provided in the prompt.
-        IF and only IF there are multiple questions seperate them with '\n===SEP===\n' Tag. Otherwise do not use delimeter'''
+        IF and only IF there are multiple questions seperate each of them with '\n===SEP===\n' Tag. Otherwise do not use delimeter'''
         
         self.system_prompt_options = '''You are an Options generator for a given MCQ. 
         Grade: 9-12th Indian grades. Return only 4 appropriate options in JSON format.
@@ -53,17 +56,17 @@ any area of cross section of the conductor will be 2400 C.
                     {"role": "system", "content": self.system_prompt_questions},
                     {"role": "user", "content": f'''Generate Question(s) for Subject: {subject}
                      Topic: {topic}
+                     type: {type}
                      difficulty: {diffi}
                      Grade: {grade}
-                     type: {type}
                      quantity: {qty}
                      '''}
                 ],
-                reasoning={'effort':'low'}
+                reasoning={'effort':'medium'}
             )
 
             data = response.choices[0].message.content
-            # print(data)
+            logger.log('INFO',f'Questions: {data}')
             return data
         
     def getOptions(self, question: str, type: str, additional_prompt: Optional[str]=None) -> dict:
@@ -83,7 +86,7 @@ any area of cross section of the conductor will be 2400 C.
                 ], reasoning={'effort':'medium'}
             )
             ai_response = response.choices[0].message.content
-            # print(ai_response)
+            logger.log('INFO',f'AI Options: {ai_response}')
             answer_and_options = json.loads(ai_response)
             answer_and_options['question'] = question
             return answer_and_options

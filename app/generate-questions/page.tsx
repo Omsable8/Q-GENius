@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Sparkles, Send, Download, Copy } from 'lucide-react'
 import Link from 'next/link'
 
+const API_BASE_URL = 'http://localhost:5000'
 interface Message {
   type: 'user' | 'assistant'
   content: string | undefined
@@ -98,7 +99,16 @@ export default function GenerateQuestionsPage() {
       key: 'additionalPrompt'
     }
   ]
-
+  const getCookie = (name: string): string => {
+    const nameLenPlus = name.length + 1;
+    return (
+      document.cookie
+        .split(';')
+        .map(c => c.trim())
+        .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
+        .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || ''
+    );
+  };
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
 
@@ -136,9 +146,10 @@ export default function GenerateQuestionsPage() {
     } else if (step === steps.length - 1) {
       // Generate questions on final step
       try {
-        const response = await fetch('/api/generate-questions', {
+        const response = await fetch(API_BASE_URL+'/api/generate_questions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' ,'X-CSRF-TOKEN':getCookie('csrf_access_token')},
+          credentials:'include',
           body: JSON.stringify(formData),
         })
 
