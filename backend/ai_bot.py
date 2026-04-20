@@ -76,20 +76,22 @@ any area of cross section of the conductor will be 2400 C.
             ### Returns
             #### Output of the AI response dictionary: {correctAnswer:string, options:[{type:fact,text:string},{type:process, text:string}, {type:accuracy,text:string}]}
         '''
-
-        with OpenRouter(api_key=self.api_key) as client:
-            response = client.chat.send(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": self.system_prompt_options},
-                    {"role": "user", "content": f'Generate Options for Question: {question}; type: {type}; Additonal instructions: {additional_prompt}'}
-                ], reasoning={'effort':'medium'}
-            )
-            ai_response = response.choices[0].message.content
-            logger.log('INFO',f'AI Options: {ai_response}')
-            answer_and_options = json.loads(ai_response)
-            answer_and_options['question'] = question
-            return answer_and_options
+        try:
+            with OpenRouter(api_key=self.api_key) as client:
+                response = client.chat.send(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": self.system_prompt_options},
+                        {"role": "user", "content": f'Generate Options for Question: {question}; type: {type}; Additonal instructions: {additional_prompt}'}
+                    ], reasoning={'effort':'medium'}
+                )
+                ai_response = response.choices[0].message.content
+                logger.log('INFO',f'AI Options: {ai_response}')
+                answer_and_options = json.loads(ai_response)
+                answer_and_options['question'] = question
+                return answer_and_options
+        except Exception as e:
+            raise e
         
 if '__main__' == __name__:
     # example use:

@@ -141,15 +141,24 @@ def login():
         print_exc(e)
         return {'success':False, 'message':e},400
     
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """
+    Clears all JWT cookies to log the user out.
+    """
+    response = jsonify({'success': True})
+    unset_jwt_cookies(response)
+    return response, 200
+
 @app.route('/token/refresh', methods=['GET'])
 @jwt_required(refresh=True)
 def refresh():
     # Refreshing expired Access token
     user_id = get_jwt_identity()
     access_token = create_access_token(identity=str(user_id))
-    resp = make_response(redirect(app.config['BASE_URL'] + '/', 302))
+    resp = jsonify({'refresh':True})
     set_access_cookies(resp, access_token)
-    return resp
+    return resp, 200
 
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):

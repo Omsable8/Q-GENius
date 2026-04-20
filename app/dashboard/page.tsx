@@ -33,6 +33,22 @@ export default function DashboardPage() {
     distractorsCreated: 468,
     hoursSpent: 24,
   })
+  /**
+   * Handles user logout by calling the backend to unset JWT cookies.
+  */
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (response.ok) {
+        window.location.href = '/' // Redirect to landing page
+      }
+    } catch (error) {
+      console.error('Logout failed', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -47,7 +63,7 @@ export default function DashboardPage() {
             <Link href="/profile">
               <Button variant="ghost" size="sm">Profile</Button>
             </Link>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
