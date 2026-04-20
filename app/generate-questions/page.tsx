@@ -109,6 +109,41 @@ export default function GenerateQuestionsPage() {
         .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || ''
     );
   };
+  async function authenticatedFetch(url: string, options: RequestInit = {}) {
+    const csrf_access_token = getCookie('csrf_access_token');
+    
+    // Set default headers
+    options.headers = {
+      ...options.headers,
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': csrf_access_token || '',
+    };
+    options.credentials = 'include';
+
+    let response = await fetch(url, options);
+
+    // If unauthorized (expired access token), attempt to refresh
+    if (response.status === 401) {
+      const refreshResponse = await fetch('http://localhost:5000/token/refresh', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': getCookie('csrf_refresh_token') || '' },
+        credentials: 'include',
+      });
+
+      if (refreshResponse.ok) {
+        // Refresh successful, update CSRF token and retry original request
+        const newCsrfToken = getCookie('csrf_access_token');
+        (options.headers as any)['X-CSRF-TOKEN'] = newCsrfToken;
+        
+        return fetch(url, options);
+      } else {
+        // Refresh failed (refresh token expired), redirect to login
+        window.location.href = '/login';
+      }
+    }
+
+    return response;
+  }
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
 
@@ -146,7 +181,7 @@ export default function GenerateQuestionsPage() {
     } else if (step === steps.length - 1) {
       // Generate questions on final step
       try {
-        const response = await fetch(API_BASE_URL+'/api/generate_questions', {
+        const response = await authenticatedFetch(API_BASE_URL+'/api/generate_questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' ,'X-CSRF-TOKEN':getCookie('csrf_access_token')},
           credentials:'include',

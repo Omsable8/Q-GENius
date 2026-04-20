@@ -40,9 +40,9 @@ def generate_options():
         questionType = data.get('questionType','')
         additional = data.get('additionalPrompt','')
         options = AI.getOptions(question=question,type=questionType,additional_prompt=additional)
-        return {options},200
+        return jsonify(options),200
     except Exception as e:
-        return {'success':False, 'message':e},400
+        return jsonify({'success':False, 'message':str(e)}),400
     
 @app.route('/api/generate_questions',methods=['POST'])
 @jwt_required()
@@ -60,10 +60,10 @@ def generate_questions():
         options = AI.getQuestions(subject, topic, type, difficulty, grade, numQuestions)
         list_options = options.split('\n===SEP===\n')
 
-        return {'questions': list_options,},200
+        return jsonify({'questions': list_options}),200
     
     except Exception as e:
-        return {'success':False, 'message':e},400
+        return jsonify({'success':False, 'message':str(e)}),400
     
 @app.route('/api/signup',methods=['POST'])
 def signup():
@@ -150,7 +150,7 @@ def logout():
     unset_jwt_cookies(response)
     return response, 200
 
-@app.route('/token/refresh', methods=['GET'])
+@app.route('/token/refresh', methods=['GET','POST'])
 @jwt_required(refresh=True)
 def refresh():
     # Refreshing expired Access token
@@ -175,7 +175,7 @@ def invalid_token_callback(callback):
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header,jwt_payload):
     # Expired auth header
-    resp = make_response(redirect(app.config['BASE_URL'] + '/token/refresh'))
+    resp = {'message':'token expired'}
     unset_access_cookies(resp)
     return resp, 401
 

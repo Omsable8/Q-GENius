@@ -113,7 +113,6 @@ export default function GenerateOptionsPage() {
     setLoading(true)
 
     try {
-      const csrf_access_token = getCookie('csrf_access_token')
       const response = await authenticatedFetch('http://localhost:5000/api/generate_options', {
         method: 'POST',
         body: JSON.stringify({
