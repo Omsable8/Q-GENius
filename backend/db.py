@@ -6,7 +6,7 @@ load_dotenv()
 
 from debug_log import DebugLogger
 
-logger = DebugLogger(filename=__file__,disable=True)
+logger = DebugLogger(filename=__file__,disable=False)
 class PostgresDB():
     def __init__(self):
         self.DATABASE_URL = os.getenv('SUPABASE_URL')
@@ -15,6 +15,35 @@ class PostgresDB():
         # self.password = os.getenv('password')
         # self.host = os.getenv('host')
 
+    def log_options(self, uid:str, question:str, type:str, add_prompt:str, options:dict[str]):
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('INSERT INTO user_gen_options(uid, question, q_type, additional_prompt, correct_answer, process, fact, accuracy) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+                            (uid,question,type,add_prompt, options['correctAnswer'], options['process'], options['fact'], options['accuracy'],))
+                cur.close()
+            logger.log('INFO','Successfully Logged Options in DB')
+            return {'success':True, 'message':'Successfully Logged Options in DB'}
+                
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to Log Options in DB. Exception: {e}"}
+        
+    def log_questions(self, uid:str, questions:list[str], type:str, subject:str, topic:str, diff: str, grade: int, numQuestions: int):
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('INSERT INTO user_gen_questions(uid, questions, q_type, subject, topic, difficulty, grade, num_questions) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+                            (uid, questions, type, subject, topic, diff, grade, numQuestions,))
+                cur.close()
+            logger.log('INFO','Successfully Logged Questions in DB')
+            return {'success':True, 'message':'Successfully Logged Questions in DB'}
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to Log questions in DB. Exception: {e}"}
+
     def get_pass_hash(self,email)->dict:
         try:
             with psycopg2.connect(self.DATABASE_URL) as conn:
@@ -22,12 +51,12 @@ class PostgresDB():
                 cur = conn.cursor()
                 cur.execute('select uid, password_hash from users where email=%s',(email,))
                 uid, fetched_password_hash = cur.fetchone()
-                logger.log('INFO',f'UID: {uid}, pass_hash: {fetched_password_hash}')
+                # logger.log('INFO',f'UID: {uid}, pass_hash: {fetched_password_hash}')
                 cur.close()
                 
             if fetched_password_hash and uid:
                 return {'success':True,'hash':fetched_password_hash, 'uid':uid}
-            logger.log('INFO',f'{uid}, {fetched_password_hash}')
+            # logger.log('INFO',f'{uid}, {fetched_password_hash}')
             return {'success':False, 'message':f'No Password Hash found for user: {email}'}
         
         except Exception as e:
@@ -42,7 +71,7 @@ class PostgresDB():
                 email_fetched = cur.fetchone()
                 cur.close()
             if email_fetched and email == email_fetched[0]:
-                logger.log('INFO',f'Email fetched : {email_fetched[0]}')
+                # logger.log('INFO',f'Email fetched : {email_fetched[0]}')
                 return True
             return False
         except Exception as e:
@@ -57,7 +86,7 @@ class PostgresDB():
                 uid_fetched = cur.fetchone()
                 cur.close()
             if uid_fetched and uid == uid_fetched[0]:
-                logger.log('INFO',f'uid fetched : {uid_fetched[0]}')
+                # logger.log('INFO',f'uid fetched : {uid_fetched[0]}')
                 return True
             return False
         except Exception as e:
@@ -74,7 +103,7 @@ class PostgresDB():
                 cur.execute('select uid from users where email=%s',(email,))
                 uid = cur.fetchone()[0]
                 cur.close()
-            logger.log('INFO',f'UID: {uid}')
+            # logger.log('INFO',f'UID: {uid}')
 
             
             return {'success':True,'message':"SignUp Successful", 'uid':uid}

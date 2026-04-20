@@ -28,18 +28,29 @@ CORS(app,supports_credentials=True,origins=['http://localhost:3000'])
 
 AI = AIbot()
 pg_obj = PostgresDB()
-logger = DebugLogger(filename=__file__,disable=True)
+logger = DebugLogger(filename=__file__,disable=False)
 
 @app.route('/api/generate_options',methods=['POST'])
 @jwt_required()
 def generate_options():
     try:
+        
         data = request.get_json()
-        logger.log("INFO",f"Request Data {data}")
         question = data.get('question','')
         questionType = data.get('questionType','')
         additional = data.get('additionalPrompt','')
+        # fetch options from AI
         options = AI.getOptions(question=question,type=questionType,additional_prompt=additional)
+        
+        # Log data into DB 
+        uid = get_jwt_identity()
+        options_dict = {'correctAnswer': options['correctAnswer']}
+        for distractors in options['options']:
+            options_dict[distractors['type']] = distractors['text']
+        
+        resp = pg_obj.log_options(uid,question=question,type=questionType,add_prompt=additional, options=options_dict)
+        if not resp['success']:
+            logger.log('ERROR',resp['message'])
         return jsonify(options),200
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
@@ -49,7 +60,6 @@ def generate_options():
 def generate_questions():
     try:
         data = request.get_json()
-        logger.log('INFO', f"Request Data: {data}")
         subject = data.get('subject','')
         topic = data.get('topic','')
         type = data.get('type','')
@@ -57,10 +67,15 @@ def generate_questions():
         grade = data.get('grade','')
         numQuestions = int(data.get('numQuestions',0))
 
-        options = AI.getQuestions(subject, topic, type, difficulty, grade, numQuestions)
-        list_options = options.split('\n===SEP===\n')
+        questions = AI.getQuestions(subject, topic, type, difficulty, grade, numQuestions)
+        questions_list = questions.split('\n===SEP===\n')
 
-        return jsonify({'questions': list_options}),200
+        uid = get_jwt_identity()
+        resp = pg_obj.log_questions(uid, questions_list, type, subject, topic, difficulty, grade, numQuestions)
+        if not resp['success']:
+            logger.log('ERROR',resp['message'])
+
+        return jsonify({'questions': questions_list}),200
     
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
@@ -70,7 +85,6 @@ def signup():
     try:
           
         data = request.get_json()
-        logger.log('INFO', f"Request Data: {data}")
         username = data.get('username','')
         email = data.get('email','')
         password = data.get('password','')
@@ -107,7 +121,6 @@ def login():
             return {'success':'true'},200
         
         data = request.get_json()
-        logger.log('INFO', f"Request Data: {data}")
         email = data.get('email','')
         password = data.get('password','')
         
@@ -176,7 +189,6 @@ def invalid_token_callback(callback):
 def expired_token_callback(jwt_header,jwt_payload):
     # Expired auth header
     resp = {'message':'token expired'}
-    unset_access_cookies(resp)
     return resp, 401
 
 if '__main__' == __name__:
