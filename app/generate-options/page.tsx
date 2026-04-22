@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Sparkles, Star, Copy, Download, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 
 interface GeneratedOption {
   type: 'fact' | 'process' | 'accuracy' | 'correct'
@@ -65,16 +66,6 @@ export default function GenerateOptionsPage() {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
-  const getCookie = (name: string): string => {
-    const nameLenPlus = name.length + 1;
-    return (
-      document.cookie
-        .split(';')
-        .map(c => c.trim())
-        .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
-        .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || ''
-    );
-  };
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -87,17 +78,15 @@ export default function GenerateOptionsPage() {
     setLoading(true)
 
     try {
-      const csrf_access_token = getCookie('csrf_access_token')
-      const response = await fetch('http://localhost:5000/api/generate_options', {
+      
+      const response = await authenticatedFetch('http://localhost:5000/api/generate_options', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' , 'X-CSRF-TOKEN':csrf_access_token},
-        credentials:'include',
         body: JSON.stringify({
           question: formData.question,
           questionType: formData.questionType,
           additionalPrompt: formData.additionalPrompt,
         }),
-      })
+      });
 
       if (response.status === 429) {
         setRateLimitError(true)

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles, Plus, BookOpen, Zap, BarChart3, Settings, LogOut } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 export default function DashboardPage() {
   const [recentItems, setRecentItems] = useState<any[]>([])
   const [stats, setStats] = useState({ questionsGenerated: 0, distractorsCreated: 0 })
@@ -25,7 +25,7 @@ export default function DashboardPage() {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return date.toLocaleDateString();
   };
-
+  
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
@@ -33,10 +33,7 @@ export default function DashboardPage() {
 
       try {
         // 1. Fetch Stats (Keep your existing logic, but maybe wrap in Promise.all)
-        const statsResp = await fetch('http://localhost:5000/api/get_stats', {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          method:'GET' });
+        const statsResp = await authenticatedFetch('http://localhost:5000/api/get_stats', {method:'GET' });
 
         if (statsResp.ok) {
           const data = await statsResp.json();
