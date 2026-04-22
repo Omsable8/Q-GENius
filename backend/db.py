@@ -44,6 +44,26 @@ class PostgresDB():
             # print_exc(e)
             return {'success':False,'message':f"Failed to Log questions in DB. Exception: {e}"}
 
+    def get_user_stats(self,uid:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('SELECT SUM(num_questions) from user_gen_questions where uid=%s',(uid,))
+                q_gen = cur.fetchone()
+                
+                cur.execute('SELECT COUNT(*) from user_gen_options where uid=%s',(uid,))
+                distractors_gen = cur.fetchone()
+
+                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen}')
+                cur.close()
+                
+            return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to Login User in DB. Exception: {e}"}
+    
     def get_pass_hash(self,email)->dict:
         try:
             with psycopg2.connect(self.DATABASE_URL) as conn:

@@ -114,6 +114,7 @@ export default function GenerateOptionsPage() {
 
       const options_data = await response.json()
       setResults(options_data)
+      sessionStorage.removeItem('user_stats')
       setRatings({})
       toast.success('Options generated successfully!')
     } catch (error) {

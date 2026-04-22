@@ -80,6 +80,18 @@ def generate_questions():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
+@app.route('/api/get_stats',methods=['GET'])
+@jwt_required()
+def get_stats():
+    try:
+        uid = get_jwt_identity()
+        user_stats = pg_obj.get_user_stats(uid=uid)
+
+        return jsonify(user_stats),200
+    
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
+    
 @app.route('/api/signup',methods=['POST'])
 def signup():
     try:
@@ -145,8 +157,7 @@ def login():
         response = jsonify({'success':True},200)
         set_access_cookies(response=response,encoded_access_token=access_token)
         set_refresh_cookies(response=response,encoded_refresh_token=refresh_token)
-        # logger.disable=False
-        logger.log('INFO',f'{access_token},{refresh_token}')
+        # logger.log('INFO',f'{access_token},{refresh_token}')
         return response
     
     except Exception as e:

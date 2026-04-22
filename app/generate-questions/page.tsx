@@ -184,6 +184,7 @@ export default function GenerateQuestionsPage() {
           timestamp: new Date(),
         }
         setMessages(prev => [...prev, assistantMessage])
+        sessionStorage.removeItem('user_stats')
       } catch (error) {
         toast.error('Failed to generate questions')
         console.error(error)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,11 +28,62 @@ export default function DashboardPage() {
     },
   ])
 
-  const [stats] = useState({
-    questionsGenerated: 156,
-    distractorsCreated: 468,
-    hoursSpent: 24,
+  const [stats, setStats] = useState({
+    questionsGenerated: 0,
+    distractorsCreated: 0,
+    hoursSpent: 0,
   })
+  const [isLoading, setIsLoading] = useState(true)
+  /*
+   * Fetches user statistics from the database or session storage.
+  */
+  useEffect(() => {
+    const getStats = async () => {
+      setIsLoading(true)
+      const cachedStats = sessionStorage.getItem('user_stats')
+      
+      if (cachedStats) {
+        setStats(JSON.parse(cachedStats))
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/get_stats', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const newStats = {
+            questionsGenerated: data.q_gen || 0,
+            distractorsCreated: data.dist_gen || 0,
+            hoursSpent: 0,
+          }
+          setStats(newStats)
+          sessionStorage.setItem('user_stats', JSON.stringify(newStats))
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    getStats()
+  }, [])
+  // Helper component for the stat value
+  const StatValue = ({ value }: { value: number }) => (
+    <p className="text-3xl font-bold text-foreground">
+      {isLoading ? (
+        <span className="animate-pulse">...</span>
+      ) : (
+        value.toLocaleString()
+      )}
+    </p>
+  )
   /**
    * Handles user logout by calling the backend to unset JWT cookies.
   */
@@ -132,7 +183,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-foreground">{stats.questionsGenerated}</p>
+              <StatValue value={stats.questionsGenerated} />
               <p className="text-sm text-muted-foreground">Total questions created</p>
             </CardContent>
           </Card>
@@ -145,7 +196,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-foreground">{stats.distractorsCreated}</p>
+              <StatValue value={stats.distractorsCreated} />
               <p className="text-sm text-muted-foreground">Smart options generated</p>
             </CardContent>
           </Card>
@@ -158,12 +209,12 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-foreground">{stats.hoursSpent}h</p>
+              <StatValue value={stats.hoursSpent} />
               <p className="text-sm text-muted-foreground">Estimated hours saved</p>
             </CardContent>
           </Card>
         </div>
-
+        
         {/* Recent Activity */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
