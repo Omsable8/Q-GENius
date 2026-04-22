@@ -8,74 +8,83 @@ import { Sparkles, Plus, BookOpen, Zap, BarChart3, Settings, LogOut } from 'luci
 import { usePathname } from 'next/navigation'
 
 export default function DashboardPage() {
-  const [recentItems] = useState([
-    {
-      title: 'Physics Kinematics Questions',
-      date: '2 hours ago',
-      type: 'questions',
-      count: 5,
-    },
-    {
-      title: 'Chemistry Reactions Distractors',
-      date: 'Yesterday',
-      type: 'options',
-      count: 3,
-    },
-    {
-      title: 'Maths Calculus Questions',
-      date: '3 days ago',
-      type: 'questions',
-      count: 8,
-    },
-  ])
-
-  const [stats, setStats] = useState({
-    questionsGenerated: 0,
-    distractorsCreated: 0,
-    hoursSpent: 0,
-  })
+  const [recentItems, setRecentItems] = useState<any[]>([])
+  const [stats, setStats] = useState({ questionsGenerated: 0, distractorsCreated: 0 })
   const [isLoading, setIsLoading] = useState(true)
-  /*
-   * Fetches user statistics from the database or session storage.
-  */
-  const pathname = usePathname();
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true)
+  const pathname = usePathname()
+
+  // Helper to format timestamps (Simple version)
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return date.toLocaleDateString();
+  };
+
   useEffect(() => {
-    const getStats = async () => {
-      setIsLoading(true)
-      const cachedStats = sessionStorage.getItem('user_stats')
-      
-      if (cachedStats) {
-        setStats(JSON.parse(cachedStats))
-        setIsLoading(false)
-        return
-      }
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      setIsHistoryLoading(true);
 
       try {
-        const response = await fetch('http://localhost:5000/api/get_stats', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+        // 1. Fetch Stats (Keep your existing logic, but maybe wrap in Promise.all)
+        const statsResp = await fetch('http://localhost:5000/api/get_stats', {
           credentials: 'include',
-        })
+          headers: { 'Content-Type': 'application/json' },
+          method:'GET' });
 
-        if (response.ok) {
-          const data = await response.json()
-          const newStats = {
-            questionsGenerated: data.q_gen || 0,
-            distractorsCreated: data.dist_gen || 0,
-            hoursSpent: 0,
-          }
-          setStats(newStats)
-          sessionStorage.setItem('user_stats', JSON.stringify(newStats))
+        if (statsResp.ok) {
+          const data = await statsResp.json();
+          setStats({ questionsGenerated: data.q_gen, distractorsCreated: data.dist_gen });
         }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
 
-    getStats()
-  }, [pathname])
+        // 2. Fetch History
+        const histResp = await fetch('http://localhost:5000/api/get_history', {
+          credentials: 'include' ,
+          headers: { 'Content-Type': 'application/json' },
+          method: 'GET'});
+        const data = await histResp.json();
+        if (!histResp.ok){
+          console.log(data.message)
+        } 
+        
+        // Format questions: [subject, topic, count, date]
+        const formattedQuestions = data.ques_hist.map((q: any) => ({
+          title: `${q[0]}: ${q[1]}`,
+          date: formatTimeAgo(q[3]),
+          type: 'questions',
+          count: q[2]
+        }));
+
+        // Format distractors: [question_text, date]
+        const formattedDistractors = data.distr_hist.map((d: any) => ({
+          title: d[0].length > 40 ? d[0].substring(0, 40) + '...' : d[0],
+          date: formatTimeAgo(d[1]),
+          type: 'options',
+          count: 3 // Static as per your distractor logic
+        }));
+
+        // Combine and sort by date (newest first), take top 3
+        const combined = [...formattedQuestions, ...formattedDistractors]
+          .slice(0, 3);
+        
+        setRecentItems(combined);
+        
+      } catch (error) {
+        console.error('Dashboard fetch error:', error);
+      } finally {
+        setIsLoading(false);
+        setIsHistoryLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [pathname]);
   // Helper component for the stat value
   const StatValue = ({ value }: { value: number }) => (
     <p className="text-3xl font-bold text-foreground">
@@ -97,6 +106,7 @@ export default function DashboardPage() {
       })
       if (response.ok) {
         window.location.href = '/' // Redirect to landing page
+        sessionStorage.clear()
       }
     } catch (error) {
       console.error('Logout failed', error)
@@ -176,7 +186,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Section */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 gap-6 mb-12">
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -202,34 +212,18 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">Smart options generated</p>
             </CardContent>
           </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-muted" />
-                Time Saved
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatValue value={stats.hoursSpent} />
-              <p className="text-sm text-muted-foreground">Estimated hours saved</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Recent Activity */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Recent Activity</h2>
-            <Link href="/history">
-              <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                View All
-              </Button>
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            {recentItems.map((item, index) => (
+        <div className="space-y-4">
+          {isHistoryLoading ? (
+            <div className="text-center py-10 text-muted-foreground animate-pulse">Loading recent activity...</div>
+          ) : recentItems.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground">
+              No recent activity found. Start generating!
+            </div>
+          ) : (
+            recentItems.map((item, index) => (
               <Card key={index} className="bg-card border-border hover:shadow-md transition-all duration-300">
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between">
@@ -237,10 +231,12 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-semibold text-foreground mb-1">{item.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{item.date}</p>
                       <div className="flex gap-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          item.type === 'questions' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
+                        }`}>
                           {item.type === 'questions' ? '📝 Questions' : '⚡ Distractors'}
                         </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-secondary/10 text-secondary font-medium">
+                        <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground font-medium">
                           {item.count} items
                         </span>
                       </div>
@@ -251,10 +247,9 @@ export default function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-
         {/* Help Section */}
         <Card className="bg-gradient-to-r from-muted/20 to-primary/10 border-border">
           <CardHeader>

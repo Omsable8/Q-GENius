@@ -86,8 +86,24 @@ def get_stats():
     try:
         uid = get_jwt_identity()
         user_stats = pg_obj.get_user_stats(uid=uid)
-
+        if not user_stats.get('success'):
+            logger.log('[ERROR]', user_stats.get('message'))
+            return jsonify(user_stats),500
         return jsonify(user_stats),200
+    
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
+
+@app.route('/api/get_history',methods=['GET'])
+@jwt_required()
+def get_history():
+    try:
+        uid = get_jwt_identity()
+        hist = pg_obj.get_user_history(uid=uid)
+        if not hist.get('success'):
+            return jsonify(hist),500
+        
+        return jsonify(hist),200
     
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400

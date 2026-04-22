@@ -54,15 +54,35 @@ class PostgresDB():
                 
                 cur.execute('SELECT COUNT(*) from user_gen_options where uid=%s',(uid,))
                 distractors_gen = cur.fetchone()
-
-                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen*3}')
+                
+                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen[0]*3}')
                 cur.close()
                 
-            return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen*3}
+            return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen[0]*3}
         
         except Exception as e:
             # print_exc(e)
-            return {'success':False,'message':f"Failed to Login User in DB. Exception: {e}"}
+            return {'success':False,'message':f"Failed to get User stats in DB. Exception: {e}"}
+        
+    def get_user_history(self,uid:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('SELECT subject, topic, num_questions, created_at from user_gen_questions where uid=%s LIMIT 3',(uid,))
+                ques_hist = cur.fetchall()
+                
+                cur.execute('SELECT question, created_at from user_gen_options where uid=%s LIMIT 3',(uid,))
+                distr_hist = cur.fetchall()
+
+                logger.log('INFO',f'UID: {uid}, ques_hist: {ques_hist}, distr_hist:{distr_hist}')
+                cur.close()
+                
+            return {'success':True, 'ques_hist': ques_hist, 'distr_hist':distr_hist}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to get User history from DB. Exception: {e}"}
     
     def get_pass_hash(self,email)->dict:
         try:
