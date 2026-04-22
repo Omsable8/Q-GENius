@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles, Plus, BookOpen, Zap, BarChart3, Settings, LogOut } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 export default function DashboardPage() {
   const [recentItems] = useState([
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   /*
    * Fetches user statistics from the database or session storage.
   */
+  const pathname = usePathname();
   useEffect(() => {
     const getStats = async () => {
       setIsLoading(true)
@@ -73,7 +75,7 @@ export default function DashboardPage() {
     }
 
     getStats()
-  }, [])
+  }, [pathname])
   // Helper component for the stat value
   const StatValue = ({ value }: { value: number }) => (
     <p className="text-3xl font-bold text-foreground">
@@ -214,7 +216,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Recent Activity */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
@@ -263,12 +265,16 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
-              <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                📚 Read Docs
-              </Button>
-              <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                🎥 Watch Tutorial
-              </Button>
+              <a href='https://doi.org/10.1007/978-3-031-36336-8_98'>
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10" >
+                  📃 Read Paper
+                </Button>
+              </a>
+              <a href='https://www.youtube.com/watch?v=BIY6XJ5S7ig'>
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                  🎥 Watch Tutorial
+                </Button>
+              </a>
               <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 💬 Contact Support
               </Button>

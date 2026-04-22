@@ -55,10 +55,10 @@ class PostgresDB():
                 cur.execute('SELECT COUNT(*) from user_gen_options where uid=%s',(uid,))
                 distractors_gen = cur.fetchone()
 
-                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen}')
+                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen*3}')
                 cur.close()
                 
-            return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen}
+            return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen*3}
         
         except Exception as e:
             # print_exc(e)
