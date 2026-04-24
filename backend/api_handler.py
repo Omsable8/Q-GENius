@@ -107,6 +107,52 @@ def get_history():
     
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
+
+@app.route('/api/get_entire_history',methods=['GET'])
+@jwt_required()
+def get_entire_history():
+    try:
+        uid = get_jwt_identity()
+        user_hist = pg_obj.get_entire_history(uid=uid)
+        if not user_hist.get('success'):
+            return jsonify(user_hist),500
+        
+        return jsonify(user_hist),200
+
+    
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
+
+@app.route('/api/get_full_view',methods=['POST'])
+@jwt_required()
+def get_full_view():
+    try:
+        data = request.get_json()
+        view_type = data.get('type','')
+        view_id = data.get('id','')
+
+        if view_type == 'options':
+            RespOptions = pg_obj.get_user_options(id=view_id)
+
+            if not RespOptions.get('success'):
+                return jsonify({'success':False, 'message':RespOptions.get('message')}),500
+            
+            RowData = RespOptions.get('distr',()) # question, q_type, created_at, correct_answer, fact, process, accuracy
+            full_view = {'question': RowData[0], 'question_type':RowData[1], 'created_at': RowData[2], 'correct':RowData[3], 'fact': RowData[4], 'process':RowData[5], 'accuracy':RowData[6]}
+            return jsonify(full_view),200
+
+        elif view_type == 'questions':
+            RespQues = pg_obj.get_user_questions(id=view_id)
+            if not RespQues.get('success'):
+                logger.log('ERROR',RespQues.get('message'))
+                return jsonify({'success':False, 'message':RespQues.get('message')}),500
+            
+            RowData = RespQues.get('ques',()) # subject, topic, type, difficulty, grade, created_at, questions
+            full_view = {'subject': RowData[0], 'topic':RowData[1], 'type': RowData[2], 'difficulty':RowData[3], 'grade': RowData[4], 'created_at':RowData[5], 'questions':RowData[6]}
+            return jsonify(full_view),200
+    
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
     
 @app.route('/api/signup',methods=['POST'])
 def signup():

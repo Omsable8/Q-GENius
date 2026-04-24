@@ -55,7 +55,7 @@ class PostgresDB():
                 cur.execute('SELECT COUNT(*) from user_gen_options WHERE uid=%s',(uid,))
                 distractors_gen = cur.fetchone()
                 
-                logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen[0]*3}')
+                # logger.log('INFO',f'UID: {uid}, q_gen: {q_gen}, dist_gen:{distractors_gen[0]*3}')
                 cur.close()
                 
             return {'success':True, 'q_gen':q_gen, 'dist_gen':distractors_gen[0]*3}
@@ -69,13 +69,13 @@ class PostgresDB():
             with psycopg2.connect(self.DATABASE_URL) as conn:
 
                 cur = conn.cursor()
-                cur.execute('SELECT subject, topic, num_questions, created_at FROM user_gen_questions WHERE uid=%s ORDER BY created_at DESC LIMIT 3',(uid,))
+                cur.execute('SELECT subject, topic, num_questions, created_at, id FROM user_gen_questions WHERE uid=%s ORDER BY created_at DESC LIMIT 3',(uid,))
                 ques_hist = cur.fetchall()
                 
-                cur.execute('SELECT question, created_at from user_gen_options WHERE uid=%s ORDER BY created_at DESC LIMIT 3',(uid,))
+                cur.execute('SELECT question, created_at, id from user_gen_options WHERE uid=%s ORDER BY created_at DESC LIMIT 3',(uid,))
                 distr_hist = cur.fetchall()
 
-                logger.log('INFO',f'UID: {uid}, ques_hist: {ques_hist}, distr_hist:{distr_hist}')
+                # logger.log('INFO',f'UID: {uid}, ques_hist: {ques_hist}, distr_hist:{distr_hist}')
                 cur.close()
                 
             return {'success':True, 'ques_hist': ques_hist, 'distr_hist':distr_hist}
@@ -83,6 +83,61 @@ class PostgresDB():
         except Exception as e:
             # print_exc(e)
             return {'success':False,'message':f"Failed to get User history from DB. Exception: {e}"}
+        
+    def get_entire_history(self,uid:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('SELECT subject, topic, num_questions, created_at, id FROM user_gen_questions WHERE uid=%s ORDER BY created_at DESC',(uid,))
+                ques_hist = cur.fetchall()
+                
+                cur.execute('SELECT question, created_at, id from user_gen_options WHERE uid=%s ORDER BY created_at DESC',(uid,))
+                distr_hist = cur.fetchall()
+
+                # logger.log('INFO',f'UID: {uid}, ques_hist: {ques_hist}, distr_hist:{distr_hist}')
+                cur.close()
+                
+            return {'success':True, 'ques_hist': ques_hist, 'distr_hist':distr_hist}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to get User history from DB. Exception: {e}"}
+        
+    def get_user_questions(self,id:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('SELECT subject, topic, type, difficulty, grade, created_at, questions FROM user_gen_questions WHERE id=%s',(id,))
+                ques = cur.fetchone()
+
+                logger.log('INFO',f'IID: {id}, ques: {ques}')
+                cur.close()
+                
+            return {'success':True, 'ques': ques}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to get User Question from DB. Exception: {e}"}
+        
+    def get_user_options(self,id:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+                
+                cur = conn.cursor()
+                
+                cur.execute('SELECT question, q_type, created_at, correct_answer, fact, process, accuracy from user_gen_options WHERE id=%s',(id,))
+                distr = cur.fetchone()
+
+                logger.log('INFO',f'ID: {id}, distr:{distr}')
+                cur.close()
+                
+            return {'success':True, 'distr':distr}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to get User Question from DB. Exception: {e}"}
     
     def get_pass_hash(self,email)->dict:
         try:
