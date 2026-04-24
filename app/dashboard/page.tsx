@@ -15,63 +15,92 @@ export default function DashboardPage() {
   const pathname = usePathname()
 
   // Helper to format timestamps (Simple version)
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatTimeAgo = (dateInput: string | Date) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) return 'Recently';
+
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
     return date.toLocaleDateString();
   };
-  
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       setIsHistoryLoading(true);
 
+      // 1. Try to load everything from session storage first
+      const cachedStats = sessionStorage.getItem('user_stats');
+      const cachedHistory = sessionStorage.getItem('user_history');
+
+      if (cachedStats && cachedHistory) {
+        setStats(JSON.parse(cachedStats));
+        setRecentItems(JSON.parse(cachedHistory));
+        setIsLoading(false);
+        setIsHistoryLoading(false);
+        return;
+      }
+
       try {
-        // 1. Fetch Stats (Keep your existing logic, but maybe wrap in Promise.all)
-        const statsResp = await authenticatedFetch('http://localhost:5000/api/get_stats', {method:'GET' });
+        // 2. Fetch Stats and History if cache is empty
+        const [statsResp, histResp] = await Promise.all([
+          fetch('http://localhost:5000/api/get_stats', { credentials: 'include' }),
+          fetch('http://localhost:5000/api/get_history', { credentials: 'include' })
+        ]);
 
-        if (statsResp.ok) {
-          const data = await statsResp.json();
-          setStats({ questionsGenerated: data.q_gen, distractorsCreated: data.dist_gen });
+        if (statsResp.ok && histResp.ok) {
+          const statsData = await statsResp.json();
+          const histData = await histResp.json();
+
+          // 3. Process Stats
+          const newStats = {
+            questionsGenerated: statsData.q_gen || 0,
+            distractorsCreated: statsData.dist_gen || 0,
+          };
+          const combinedRaw = [
+            ...histData.ques_hist.map((q: any) => ({
+              title: `${q[0]}: ${q[1]}`,
+              rawDate: new Date(q[3]),
+              type: 'questions',
+              count: q[2]
+            })),
+            ...histData.distr_hist.map((d: any) => ({
+              title: d[0].length > 40 ? d[0].substring(0, 40) + '...' : d[0],
+              rawDate: new Date(d[1]),
+              type: 'options',
+              count: 3
+            }))
+          ];
+          
+          const finalItems = combinedRaw
+          .sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime())
+          .slice(0, 3)
+          .map(item => ({
+            ...item,
+            date: formatTimeAgo(item.rawDate) // Now formatted correctly
+          }));
+
+          // 5. Update State and Session Storage
+          setStats(newStats);
+          setRecentItems(finalItems);
+          sessionStorage.setItem('user_stats', JSON.stringify(newStats));
+          sessionStorage.setItem('user_history', JSON.stringify(finalItems));
         }
-
-        // 2. Fetch History
-        const histResp = await fetch('http://localhost:5000/api/get_history', {
-          credentials: 'include' ,
-          headers: { 'Content-Type': 'application/json' },
-          method: 'GET'});
-        const data = await histResp.json();
-        if (!histResp.ok){
-          console.log(data.message)
-        } 
-        
-        // Format questions: [subject, topic, count, date]
-        const formattedQuestions = data.ques_hist.map((q: any) => ({
-          title: `${q[0]}: ${q[1]}`,
-          date: formatTimeAgo(q[3]),
-          type: 'questions',
-          count: q[2]
-        }));
-
-        // Format distractors: [question_text, date]
-        const formattedDistractors = data.distr_hist.map((d: any) => ({
-          title: d[0].length > 40 ? d[0].substring(0, 40) + '...' : d[0],
-          date: formatTimeAgo(d[1]),
-          type: 'options',
-          count: 3 // Static as per your distractor logic
-        }));
-
-        // Combine and sort by date (newest first), take top 3
-        const combined = [...formattedQuestions, ...formattedDistractors]
-          .slice(0, 3);
-        
-        setRecentItems(combined);
-        
       } catch (error) {
         console.error('Dashboard fetch error:', error);
       } finally {
@@ -82,6 +111,7 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [pathname]);
+
   // Helper component for the stat value
   const StatValue = ({ value }: { value: number }) => (
     <p className="text-3xl font-bold text-foreground">
@@ -103,7 +133,7 @@ export default function DashboardPage() {
       })
       if (response.ok) {
         window.location.href = '/' // Redirect to landing page
-        sessionStorage.clear()
+        sessionStorage.clear() // clean access/refresh, user_stats and user_history
       }
     } catch (error) {
       console.error('Logout failed', error)
@@ -228,9 +258,8 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-semibold text-foreground mb-1">{item.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{item.date}</p>
                       <div className="flex gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          item.type === 'questions' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
-                        }`}>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${item.type === 'questions' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
+                          }`}>
                           {item.type === 'questions' ? '📝 Questions' : '⚡ Distractors'}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground font-medium">
