@@ -1,18 +1,12 @@
-const API_URL = 'http://localhost:5000'
+// Inside app/api/login/route.ts
+const host = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { username, email, password } = body
 
-    // TODO: Implement Supabase user registration
-    // This should:
-    // 1. Validate input
-    // 2. Check if user already exists
-    // 3. Hash password with bcrypt (if not using Supabase auth)
-    // 4. Create user in Supabase
-    // 5. Return success or error
-
-    const response = await fetch('/api_flask/signup',
+    const response = await fetch(`${host}/api_flask/signup`,
       {'headers':{'Content-Type':'application/json'},
       'method':'POST',
       'body': JSON.stringify({username,email,password})
