@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api_flask/:path*",
+      "destination": "/backend/api_handler.py"
+    }
+  ]
+}
