@@ -15,11 +15,12 @@ load_dotenv()
 ############ CONFIGS ############ 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
-app.config['BASE_URL'] = 'http://localhost:5000'
+app.config['BASE_URL'] = 'https://' + os.getenv('VERCEL_URL', 'localhost:5000')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_KEY')
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_CSRF_CHECK_FORM'] = True
-app.config['JWT_COOKIE_SECURE'] = False  # Set to True only in production with HTTPS
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True 
+app.config['JWT_CSRF_CHECK_FORM'] = False # For prod
+app.config['JWT_COOKIE_SECURE'] = True if os.getenv('VERCEL_URL') else False
 app.config['JWT_COOKIE_SAMESITE'] = 'Lax' # Or 'None' for cross-domain + HTTPS
 
 jwt = JWTManager(app)

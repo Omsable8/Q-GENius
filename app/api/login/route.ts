@@ -1,11 +1,9 @@
-const host = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000';
-
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email, password } = body
-    
-    const response = await fetch(`${host}/api_flask/login`,{
+
+    const response = await fetch(`/api_flask/login`,{
       'headers':{'Content-Type':'application/json'},
       'credentials':'include',
       'method': 'POST',
