@@ -255,8 +255,8 @@ The frontend is fully functional and ready for backend integration. Connect your
 
 ## 📄 License
 
-[Your License Here]
+MIT License
 
 ## 🔗 Related Research
 
-This implementation is based on the Q-GENius research paper on intelligent MCQ generation with diagnostic distractors.
+This implementation is based on the Q-GENius research paper on intelligent MCQ generation with diagnostic distractors. https://link.springer.com/chapter/10.1007/978-3-031-36336-8_98
