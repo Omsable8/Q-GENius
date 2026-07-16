@@ -26,7 +26,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
 
     // If unauthorized (expired access token), attempt to refresh
     if (response.status === 401) {
-        const refreshResponse = await fetch('http://localhost:5000/token/refresh', {
+        const refreshResponse = await fetch('/api_flask/token/refresh', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': getCookie('csrf_refresh_token') || '' },
             credentials: 'include',

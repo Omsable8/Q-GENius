@@ -30,7 +30,7 @@ AI = AIbot()
 pg_obj = PostgresDB()
 logger = DebugLogger(filename=__file__,disable=False)
 
-@app.route('/api/generate_options',methods=['POST'])
+@app.route('/generate_options',methods=['POST'])
 @jwt_required()
 def generate_options():
     try:
@@ -55,7 +55,7 @@ def generate_options():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/api/generate_questions',methods=['POST'])
+@app.route('/generate_questions',methods=['POST'])
 @jwt_required()
 def generate_questions():
     try:
@@ -80,7 +80,7 @@ def generate_questions():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/api/get_stats',methods=['GET'])
+@app.route('/get_stats',methods=['GET'])
 @jwt_required()
 def get_stats():
     try:
@@ -94,7 +94,7 @@ def get_stats():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/api/get_history',methods=['GET'])
+@app.route('/get_history',methods=['GET'])
 @jwt_required()
 def get_history():
     try:
@@ -108,7 +108,7 @@ def get_history():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/api/get_entire_history',methods=['GET'])
+@app.route('/get_entire_history',methods=['GET'])
 @jwt_required()
 def get_entire_history():
     try:
@@ -123,7 +123,7 @@ def get_entire_history():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/api/get_full_view',methods=['POST'])
+@app.route('/get_full_view',methods=['POST'])
 @jwt_required()
 def get_full_view():
     try:
@@ -154,7 +154,7 @@ def get_full_view():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/api/signup',methods=['POST'])
+@app.route('/signup',methods=['POST'])
 def signup():
     try:
           
@@ -185,7 +185,7 @@ def signup():
         print_exc(e)
         return {'success':False, 'message':e},400
     
-@app.route('/api/login',methods=['POST'])
+@app.route('/login',methods=['POST'])
 @jwt_required(optional=True)
 def login():
     try:
@@ -227,7 +227,7 @@ def login():
         print_exc(e)
         return {'success':False, 'message':e},400
     
-@app.route('/api/logout', methods=['POST'])
+@app.route('/logout', methods=['POST'])
 def logout():
     """
     Clears all JWT cookies to log the user out.
@@ -249,12 +249,12 @@ def refresh():
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
     # No auth header
-    return redirect(app.config['BASE_URL'] + '/api/signup', 401)
+    return redirect(app.config['BASE_URL'] + '/signup', 401)
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
     # Invalid Fresh/Non-Fresh Access token in auth header
-    resp = make_response(redirect(app.config['BASE_URL'] + '/api/signup'))
+    resp = make_response(redirect(app.config['BASE_URL'] + '/signup'))
     unset_jwt_cookies(resp)
     return resp, 401
 
