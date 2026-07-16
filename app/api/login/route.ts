@@ -1,16 +1,11 @@
-const API_URL = 'http://localhost:5000'
+const host = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email, password } = body
-
-    // TODO: Implement Supabase authentication
-    // This should:
-    // 1. Validate email and password
-    // 2. Call Supabase auth API
-    // 3. Return session token/JWT
-    // 4. Set HTTP-only cookie
-    const response = await fetch('/api_flask/login',{
+    
+    const response = await fetch(`${host}/api_flask/login`,{
       'headers':{'Content-Type':'application/json'},
       'credentials':'include',
       'method': 'POST',
