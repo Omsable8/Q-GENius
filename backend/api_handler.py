@@ -31,7 +31,7 @@ AI = AIbot()
 pg_obj = PostgresDB()
 logger = DebugLogger(filename=__file__,disable=False)
 
-@app.route('/generate_options',methods=['POST'])
+@app.route('/api_flask/generate_options',methods=['POST'])
 @jwt_required()
 def generate_options():
     try:
@@ -56,7 +56,7 @@ def generate_options():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/generate_questions',methods=['POST'])
+@app.route('/api_flask/generate_questions',methods=['POST'])
 @jwt_required()
 def generate_questions():
     try:
@@ -81,7 +81,7 @@ def generate_questions():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/get_stats',methods=['GET'])
+@app.route('/api_flask/get_stats',methods=['GET'])
 @jwt_required()
 def get_stats():
     try:
@@ -95,7 +95,7 @@ def get_stats():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/get_history',methods=['GET'])
+@app.route('/api_flask/get_history',methods=['GET'])
 @jwt_required()
 def get_history():
     try:
@@ -109,7 +109,7 @@ def get_history():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/get_entire_history',methods=['GET'])
+@app.route('/api_flask/get_entire_history',methods=['GET'])
 @jwt_required()
 def get_entire_history():
     try:
@@ -124,7 +124,7 @@ def get_entire_history():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/get_full_view',methods=['POST'])
+@app.route('/api_flask/get_full_view',methods=['POST'])
 @jwt_required()
 def get_full_view():
     try:
@@ -155,7 +155,7 @@ def get_full_view():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
     
-@app.route('/signup',methods=['POST'])
+@app.route('/api_flask/signup',methods=['POST'])
 def signup():
     try:
           
@@ -186,7 +186,7 @@ def signup():
         print_exc(e)
         return {'success':False, 'message':e},400
     
-@app.route('/login',methods=['POST'])
+@app.route('/api_flask/login',methods=['POST'])
 @jwt_required(optional=True)
 def login():
     try:
@@ -228,7 +228,7 @@ def login():
         print_exc(e)
         return {'success':False, 'message':e},400
     
-@app.route('/logout', methods=['POST'])
+@app.route('/api_flask/logout', methods=['POST'])
 def logout():
     """
     Clears all JWT cookies to log the user out.
@@ -237,7 +237,7 @@ def logout():
     unset_jwt_cookies(response)
     return response, 200
 
-@app.route('/token/refresh', methods=['GET','POST'])
+@app.route('/api_flask/token/refresh', methods=['GET','POST'])
 @jwt_required(refresh=True)
 def refresh():
     # Refreshing expired Access token
