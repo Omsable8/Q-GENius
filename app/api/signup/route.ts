@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // 4. Create user in Supabase
     // 5. Return success or error
 
-    const response = await fetch(API_URL+'/api/signup',
+    const response = await fetch('/api_flask/signup',
       {'headers':{'Content-Type':'application/json'},
       'method':'POST',
       'body': JSON.stringify({username,email,password})
