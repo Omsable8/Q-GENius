@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     // 2. Call Supabase auth API
     // 3. Return session token/JWT
     // 4. Set HTTP-only cookie
-    const response = await fetch(API_URL+'/api/login',{
+    const response = await fetch('/api_flask/login',{
       'headers':{'Content-Type':'application/json'},
       'credentials':'include',
       'method': 'POST',

@@ -156,7 +156,7 @@ export default function GenerateQuestionsPage() {
     } else if (step === steps.length - 1) {
       // Generate questions on final step
       try {
-        const response = await authenticatedFetch(API_BASE_URL+'/api/generate_questions', {
+        const response = await authenticatedFetch('/api_flask/generate_questions', {
           method: 'POST',
           body: JSON.stringify(formData),
         })

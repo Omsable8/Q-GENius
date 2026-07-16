@@ -48,7 +48,7 @@ export default function DashboardPage() {
     setViewModalOpen(true)
 
     try {
-      const response = await authenticatedFetch('http://localhost:5000/api/get_full_view', {
+      const response = await authenticatedFetch('/api_flask/get_full_view', {
         method: 'POST',
         body: JSON.stringify({
           type: type,
@@ -117,8 +117,8 @@ export default function DashboardPage() {
       try {
         // 2. Fetch Stats and History if cache is empty
         const [statsResp, histResp] = await Promise.all([
-          fetch('http://localhost:5000/api/get_stats', { credentials: 'include' }),
-          fetch('http://localhost:5000/api/get_history', { credentials: 'include' })
+          fetch('/api_flask/get_stats', { credentials: 'include' }),
+          fetch('/api_flask/get_history', { credentials: 'include' })
         ]);
 
         if (statsResp.ok && histResp.ok) {
@@ -187,7 +187,7 @@ export default function DashboardPage() {
   */
   const handleLogout = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/logout', {
+      const response = await fetch('/api_flask/logout', {
         method: 'POST',
         credentials: 'include',
       })

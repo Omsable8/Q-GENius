@@ -69,7 +69,7 @@ export default function HistoryPage() {
     const fetchHistory = async () => {
       setIsLoading(true)
       try {
-        const response = await authenticatedFetch('http://localhost:5000/api/get_entire_history', {
+        const response = await authenticatedFetch('/api_flask/get_entire_history', {
           method: 'GET',
         })
         if (response.ok) {
@@ -114,7 +114,7 @@ export default function HistoryPage() {
     setViewModalOpen(true)
 
     try {
-      const response = await authenticatedFetch('http://localhost:5000/api/get_full_view', {
+      const response = await authenticatedFetch('/api_flask/get_full_view', {
         method: 'POST',
         body: JSON.stringify({
           type: type,

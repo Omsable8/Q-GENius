@@ -79,7 +79,7 @@ export default function GenerateOptionsPage() {
 
     try {
       
-      const response = await authenticatedFetch('http://localhost:5000/api/generate_options', {
+      const response = await authenticatedFetch('/api_flask/generate_options', {
         method: 'POST',
         body: JSON.stringify({
           question: formData.question,
