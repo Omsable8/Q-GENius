@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api_flask/(.*)",
-      "destination": "/backend/api_handler.py"
-    }
-  ]
-}
