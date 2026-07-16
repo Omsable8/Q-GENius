@@ -1,12 +1,17 @@
 const host = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000';
+import { headers } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    const nextHeaders = await headers();
     const { email, password } = body
     
     const response = await fetch(`${host}/api_flask/login`,{
-      'headers':{'Content-Type':'application/json'},
+      'headers':
+      {'Content-Type':'application/json',
+        'Cookie': nextHeaders.get('cookie') || '',
+        'X-CSRF-TOKEN': nextHeaders.get('x-csrf-token') || ''},
       'credentials':'include',
       'method': 'POST',
       'body': JSON.stringify({email, password})
