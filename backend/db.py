@@ -109,7 +109,7 @@ class PostgresDB():
             with psycopg2.connect(self.DATABASE_URL) as conn:
 
                 cur = conn.cursor()
-                cur.execute('SELECT subject, topic, type, difficulty, grade, created_at, questions FROM user_gen_questions WHERE id=%s',(id,))
+                cur.execute('SELECT subject, topic, q_type, difficulty, grade, created_at, questions FROM user_gen_questions WHERE id=%s',(id,))
                 ques = cur.fetchone()
 
                 logger.log('INFO',f'IID: {id}, ques: {ques}')
