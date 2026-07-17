@@ -163,7 +163,7 @@ def get_full_view():
         return jsonify({'success':False, 'message':str(e)}),400
 
 ################ USER PROFILE ################
-@app.route('/api/get_profile', methods=['GET'])
+@app.route('/api_flask/get_profile', methods=['GET'])
 @jwt_required()
 def get_profile():
     try:
@@ -180,7 +180,7 @@ def get_profile():
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
 
-@app.route('/api/change_pass', methods=['POST'])
+@app.route('/api_flask/change_pass', methods=['POST'])
 @jwt_required()
 def change_pass():
     try:
