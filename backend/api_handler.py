@@ -25,8 +25,13 @@ app.config['JWT_COOKIE_SAMESITE'] = 'Lax' # Or 'None' for cross-domain + HTTPS
 
 jwt = JWTManager(app)
 
-CORS(app,supports_credentials=True,origins=['http://localhost:3000'])
+allowed_origins = ['http://localhost:3000']
+if os.getenv('VERCEL_URL'):
+    allowed_origins.append(f"https://{os.getenv('VERCEL_URL')}")
+if os.getenv('VERCEL_PROJECT_PRODUCTION_URL'):
+    allowed_origins.append(f"https://{os.getenv('VERCEL_PROJECT_PRODUCTION_URL')}")
 
+CORS(app, supports_credentials=True, origins=allowed_origins)
 AI = AIbot()
 pg_obj = PostgresDB()
 logger = DebugLogger(filename=__file__,disable=False)
@@ -250,7 +255,7 @@ def refresh():
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
     # No auth header
-    return redirect(app.config['BASE_URL'] + '/signup', 401)
+    return jsonify({'message': 'unauthorized'}), 401
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
