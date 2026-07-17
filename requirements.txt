@@ -1,4 +1,4 @@
-openai
+openrouter
 Flask
 Flask-JWT-Extended
 Flask-Bcrypt
