@@ -1,8 +1,7 @@
-spacy
 openai
-gradio
-Flask-JWT-Extended
 Flask
+Flask-JWT-Extended
+Flask-Bcrypt
 Flask-cors
-flask
+python-dotenv
 psycopg2-binary
