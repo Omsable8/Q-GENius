@@ -94,7 +94,7 @@ export default function DashboardPage() {
     setPasswordForm({ current: '', new: '', confirm: '' })
 
     try {
-      const response = await authenticatedFetch('http://localhost:5000/api/get_profile', {
+      const response = await authenticatedFetch('/api_flask/get_profile', {
         method: 'GET',
       })
 
@@ -132,7 +132,7 @@ export default function DashboardPage() {
     setIsChangingPassword(true)
 
     try {
-      const response = await authenticatedFetch('http://localhost:5000/api/change_pass', {
+      const response = await authenticatedFetch('/api_flask/change_pass', {
         method: 'POST',
         body: JSON.stringify({ password: passwordForm.new }),
       })
