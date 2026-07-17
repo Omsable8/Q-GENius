@@ -44,6 +44,35 @@ class PostgresDB():
             # print_exc(e)
             return {'success':False,'message':f"Failed to Log questions in DB. Exception: {e}"}
 
+    def get_user_profile(self, uid:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+
+                cur = conn.cursor()
+                cur.execute('SELECT name, email from users WHERE uid=%s',(uid,))
+                user_data = cur.fetchall()
+                
+                cur.close()
+                
+            return {'success':True, 'user_data':user_data}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to get User Profile in DB. Exception: {e}"}
+        
+    def change_password(self, uid:str, pass_hash:str)->dict:
+        try:
+            with psycopg2.connect(self.DATABASE_URL) as conn:
+                cur = conn.cursor()
+                cur.execute('UPDATE users SET password_hash=%s WHERE uid=%s',(pass_hash, uid,))
+                cur.close()
+                
+            return {'success':True, 'message':"Password Updated successfully!"}
+        
+        except Exception as e:
+            # print_exc(e)
+            return {'success':False,'message':f"Failed to Change User's Password in DB. Exception: {e}"}
+
     def get_user_stats(self,uid:str)->dict:
         try:
             with psycopg2.connect(self.DATABASE_URL) as conn:

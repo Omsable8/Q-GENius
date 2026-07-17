@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Sparkles, Plus, BookOpen, Zap, LogOut, Flame, GraduationCap, Calendar, Hash, X, FileText, Target, CheckCircle } from 'lucide-react'
+import { Sparkles, Plus, BookOpen, Zap, LogOut, Flame, GraduationCap, Calendar, Hash, X, FileText, Target, CheckCircle, User, Lock, Eye, EyeOff } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import { motion } from 'framer-motion'
@@ -29,6 +29,11 @@ interface OptionViewData {
   accuracy: string
 }
 
+interface UserProfile {
+  name: string
+  email: string
+}
+
 type ViewData = QuestionViewData | OptionViewData
 
 export default function DashboardPage() {
@@ -41,6 +46,15 @@ export default function DashboardPage() {
   const [viewData, setViewData] = useState<ViewData | null>(null)
   const [viewType, setViewType] = useState<'questions' | 'options'>('questions')
   const [viewLoading, setViewLoading] = useState(false)
+
+  // Profile modal state
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [profileData, setProfileData] = useState<UserProfile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
+  const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false })
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   const handleView = async (type: 'questions' | 'options', id: string) => {
     setViewLoading(true)
@@ -70,6 +84,71 @@ export default function DashboardPage() {
   const closeModal = () => {
     setViewModalOpen(false)
     setViewData(null)
+  }
+
+  // Profile modal handlers
+  const openProfile = async () => {
+    setProfileModalOpen(true)
+    setProfileLoading(true)
+    setPasswordMessage(null)
+    setPasswordForm({ current: '', new: '', confirm: '' })
+
+    try {
+      const response = await authenticatedFetch('http://localhost:5000/api/get_profile', {
+        method: 'GET',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfileData(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error)
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  const closeProfile = () => {
+    setProfileModalOpen(false)
+    setProfileData(null)
+    setPasswordMessage(null)
+  }
+
+  const handlePasswordChange = async (e: React.SubmitEvent) => {
+    e.preventDefault()
+    setPasswordMessage(null)
+
+    if (passwordForm.new !== passwordForm.confirm) {
+      setPasswordMessage({ type: 'error', text: 'New passwords do not match' })
+      return
+    }
+
+    if (passwordForm.new.length < 6) {
+      setPasswordMessage({ type: 'error', text: 'Password must be at least 6 characters' })
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      const response = await authenticatedFetch('http://localhost:5000/api/change_pass', {
+        method: 'POST',
+        body: JSON.stringify({ password: passwordForm.new }),
+      })
+
+      if (response.ok) {
+        setPasswordMessage({ type: 'success', text: 'Password updated successfully!' })
+        setPasswordForm({ current: '', new: '', confirm: '' })
+      } else {
+        const data = await response.json()
+        setPasswordMessage({ type: 'error', text: data.message || 'Failed to update password' })
+      }
+    } catch (error) {
+      setPasswordMessage({ type: 'error', text: 'Network error. Please try again.' })
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   // Helper to format timestamps (Simple version)
@@ -210,9 +289,10 @@ export default function DashboardPage() {
             <span className="font-bold text-lg text-foreground">Q-GENius</span>
           </Link>
           <div className="flex items-center space-x-2">
-            <Link href="/profile">
-              <Button variant="ghost" size="sm">Profile</Button>
-            </Link>
+            <Button variant="ghost" size="sm" onClick={openProfile}>
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -422,7 +502,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 80px)' }}>
+            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(95vh - 80px)' }}>
               {viewLoading ? (
                 <div className="space-y-4">
                   <div className="h-6 w-1/2 animate-pulse rounded-md bg-secondary/40" />
@@ -438,6 +518,141 @@ export default function DashboardPage() {
                 )
               ) : (
                 <p className="text-center text-muted-foreground">No data available</p>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {profileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeProfile}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="relative w-full max-w-md max-h-[95vh] overflow-hidden rounded-2xl border border-border bg-white shadow-2xl"
+          >
+            {/* Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-white px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">User Profile</h2>
+                  <p className="text-sm text-muted-foreground">Manage your account</p>
+                </div>
+              </div>
+              <button
+                onClick={closeProfile}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(85vh - 80px)' }}>
+              {profileLoading ? (
+                <div className="space-y-4">
+                  <div className="h-6 w-1/2 animate-pulse rounded-md bg-secondary/40" />
+                  <div className="h-4 w-3/4 animate-pulse rounded-md bg-secondary/30" />
+                  <div className="h-20 w-full animate-pulse rounded-xl bg-muted/50" />
+                </div>
+              ) : profileData ? (
+                <div className="space-y-6">
+                  {/* User Info */}
+                  <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Name</p>
+                      <p className="font-semibold text-foreground">{profileData.name}</p>
+                    </div>
+                    <div className="border-t border-border pt-3">
+                      <p className="text-sm text-muted-foreground mb-1">Email</p>
+                      <p className="font-semibold text-foreground">{profileData.email}</p>
+                    </div>
+                  </div>
+
+                  {/* Change Password */}
+                  <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
+                      <Lock className="h-5 w-5 text-primary" />
+                      Change Password
+                    </h3>
+                    <form onSubmit={handlePasswordChange} className="space-y-3">
+                      <div className="relative">
+                        <input
+                          type={showPassword.new ? 'text' : 'password'}
+                          placeholder="New password"
+                          value={passwordForm.new}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
+                          className="w-full rounded-lg border border-border bg-white px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword({ ...showPassword, new: !showPassword.new })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type={showPassword.confirm ? 'text' : 'password'}
+                          placeholder="Confirm new password"
+                          value={passwordForm.confirm}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                          className="w-full rounded-lg border border-border bg-white px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+
+                      {passwordMessage && (
+                        <div className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                          passwordMessage.type === 'success' 
+                            ? 'bg-green-50 text-green-700 border border-green-200' 
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          {passwordMessage.text}
+                        </div>
+                      )}
+
+                      <Button
+                        type="submit"
+                        disabled={isChangingPassword}
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        {isChangingPassword ? (
+                          <span className="animate-pulse">Updating...</span>
+                        ) : (
+                          'Update Password'
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground">Failed to load profile</p>
               )}
             </div>
           </motion.div>

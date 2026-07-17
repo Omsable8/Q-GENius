@@ -79,7 +79,8 @@ def generate_questions():
     
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
-    
+
+################ Dashboard and USER HISTORY endpoints ################
 @app.route('/api/get_stats',methods=['GET'])
 @jwt_required()
 def get_stats():
@@ -153,7 +154,42 @@ def get_full_view():
     
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)}),400
+
+################ USER PROFILE ################
+@app.route('/api/get_profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    try:
+        uid = get_jwt_identity()
+        resp_user_data = pg_obj.get_user_profile(uid)
+        if not resp_user_data.get('success'):
+            return jsonify({'success':False, 'message': resp_user_data.get('message')}),500
+        
+        user_data = resp_user_data.get('user_data')[0]
+        logger.log('INFO',f'userdata: {user_data}')
+        user_dict = {'name':user_data[0], 'email':user_data[1]}
+        return jsonify(user_dict),200
+     
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
+
+@app.route('/api/change_pass', methods=['POST'])
+@jwt_required()
+def change_pass():
+    try:
+        data = request.get_json()
+        uid = get_jwt_identity()
+        password = data.get('password')
+        pass_hash = bcrypt.generate_password_hash(password=password).decode('utf-8')
+        resp = pg_obj.change_password(uid,pass_hash)
+        if not resp.get('success'):
+            return jsonify({'success':False, 'message': resp.get('message')}),500
+        return jsonify( resp.get("message") ),200
+
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)}),400
     
+################ AUTH ENDPOINTS ################ 
 @app.route('/api/signup',methods=['POST'])
 def signup():
     try:
