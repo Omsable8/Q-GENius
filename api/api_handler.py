@@ -2,10 +2,12 @@ from flask import app, Flask, request, jsonify, redirect, make_response
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-import json
+import sys
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, set_access_cookies,set_refresh_cookies, jwt_required, get_jwt_identity,unset_jwt_cookies, unset_access_cookies
 from traceback import print_exc
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from ai_bot import AIbot
 from db import PostgresDB
