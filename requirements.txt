@@ -1,1 +1,8 @@
--r backend/requirements.txt
+spacy
+openai
+gradio
+Flask-JWT-Extended
+Flask
+Flask-cors
+flask
+psycopg2-binary
