@@ -6,16 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Sparkles, Send, Download, BookOpen, Target, Flame, GraduationCap, Hash, FileText, BrainCircuit, History } from 'lucide-react'
+import { Sparkles, Send, Download, BookOpen, Target, Flame, GraduationCap, Hash, FileText, BrainCircuit, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 
 const API_BASE_URL = 'http://localhost:5000'
-interface Message {
-  type: 'user' | 'assistant'
-  content: string | undefined
-  timestamp: Date
-}
 
 interface FormState {
   subject: string
@@ -28,34 +23,26 @@ interface FormState {
 }
 
 export default function GenerateQuestionsPage() {
-  const [isMounted, setIsMounted] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      type: 'assistant',
-      content: "Hello! 👋 I'm ready to help you generate custom MCQs. Let's start by filling in some details. What subject would you like to create questions for? (Physics, Chemistry, Maths, or Biology)",
-      timestamp: new Date(),
-    },
-  ])
+  
   const [loading, setLoading] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const [step, setStep] = useState(0)
   const [formData, setFormData] = useState<FormState>({
     subject: '',
     topic: '',
     type: '',
     difficulty: '',
     grade: '',
-    numQuestions: '',
+    numQuestions: '5',
     additionalPrompt: '',
   })
   const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([])
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const quickTemplates = [
-    'Grade 12 Calculus - Differentiation',
-    'Cell Biology Basics - Organelles',
-    'Physics Kinematics - Motion in 1D',
-    'Organic Chemistry - Functional Groups',
-  ]
+  
+
+  const subjects = ['Physics', 'Chemistry', 'Maths', 'Biology']
+  const questionTypes = ['Numeric', 'Non-Numeric']
+  const difficulties = ['Easy', 'Medium', 'Hard']
+  const grades = ['10', '11', '12']
+  const numOptions = ['3', '5', '10', '15', '20']
+
   const blueprintItems = [
     { key: 'subject', label: 'Subject', value: formData.subject, icon: BookOpen },
     { key: 'topic', label: 'Topic', value: formData.topic, icon: Target },
@@ -66,121 +53,34 @@ export default function GenerateQuestionsPage() {
     { key: 'additionalPrompt', label: 'Prompt', value: formData.additionalPrompt, icon: FileText },
   ]
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const steps = [
-    {
-      label: 'Subject',
-      key: 'subject',
-      options: ['Physics', 'Chemistry', 'Maths', 'Biology'],
-      message: 'Great! Now, which topic would you like to focus on?',
-    },
-    {
-      label: 'Topic',
-      key: 'topic',
-      message: 'Which type of questions? (Numeric / Non-numeric)',
-    },
-    {
-      label: 'Type',
-      key: 'type',
-      options: ['Numeric', 'Non-Numeric'],
-      message: 'What difficulty level would you prefer? (Easy, Medium, Hard)',
-    },
-    {
-      label: 'Difficulty',
-      key: 'difficulty',
-      options: ['Easy', 'Medium', 'Hard'],
-      message: 'Which grade level? (10, 11, or 12)',
-    },
-    {
-      label: 'Grade',
-      key: 'grade',
-      options: ['10', '11', '12'],
-      message: 'How many questions would you like to generate?',
-    },
-    {
-      label: 'Number of Questions',
-      key: 'numQuestions',
-      message: 'Any additional requirements or prompts? (Optional - you can skip this)',
-    },
-    {
-      label: 'Additional Prompt',
-      key: 'additionalPrompt'
-    }
-  ]
-  
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
-
-    // Add user message
-    const userMessage: Message = {
-      type: 'user',
-      content: inputValue,
-      timestamp: new Date(),
-    }
-    setMessages(prev => [...prev, userMessage])
-    setInputValue('')
-
-    // Update form data
-    const currentStep = steps[step]
-    if (currentStep && currentStep.key !== 'additionalPrompt') {
-      setFormData(prev => ({ ...prev, [currentStep.key]: inputValue }))
-    } else if (step === steps.length - 1) {
-      setFormData(prev => ({ ...prev, additionalPrompt: inputValue }))
+  const handleGenerate = async () => {
+    if (!formData.subject || !formData.topic || !formData.type || !formData.difficulty || !formData.grade) {
+      toast.error('Please fill in all required fields')
+      return
     }
 
     setLoading(true)
 
-    // Generate assistant response
-    if (step < steps.length - 1) {
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          type: 'assistant',
-          content: steps[step].message,
-          timestamp: new Date(),
-        }
-        setMessages(prev => [...prev, assistantMessage])
-        setStep(prev => prev + 1)
-        setLoading(false)
-      }, 300)
-    } else if (step === steps.length - 1) {
-      // Generate questions on final step
-      try {
-        const response = await authenticatedFetch(API_BASE_URL+'/api/generate_questions', {
-          method: 'POST',
-          body: JSON.stringify(formData),
-        })
+    try {
+      const response = await authenticatedFetch(API_BASE_URL + '/api/generate_questions', {
+        method: 'POST',
+        body: JSON.stringify(formData),
+      })
 
-        if (!response.ok) {
-          throw new Error('Failed to generate questions')
-        }
-
-        const data = await response.json()
-        setGeneratedQuestions(data.questions || [])
-
-        const assistantMessage: Message = {
-          type: 'assistant',
-          content: `Perfect! I've generated ${data.questions?.length || 0} questions for you. You can review them below and download if you're satisfied.`,
-          timestamp: new Date(),
-        }
-        setMessages(prev => [...prev, assistantMessage])
-        sessionStorage.removeItem('user_history')
-      } catch (error) {
-        toast.error('Failed to generate questions')
-        console.error(error)
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error('Failed to generate questions')
       }
+
+      const data = await response.json()
+      setGeneratedQuestions(data.questions || [])
+
+      sessionStorage.removeItem('user_history')
+    } catch (error) {
+      toast.error('Failed to generate questions')
+      console.error(error)
+      toast.error('Failed to generate questions')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -196,6 +96,85 @@ export default function GenerateQuestionsPage() {
     a.click()
     toast.success('Downloaded successfully!')
   }
+
+  const SelectField = ({
+    label,
+    value,
+    options,
+    onChange,
+    icon: Icon,
+    placeholder = 'Select...',
+  }: {
+    label: string
+    value: string
+    options: string[]
+    onChange: (val: string) => void
+    icon: any
+    placeholder?: string
+  }) => (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+        <Icon className="h-4 w-4 text-[#8CA9FF]" />
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full appearance-none rounded-xl border border-[#AAC4F5]/40 bg-white px-4 py-2.5 pr-10 text-sm text-slate-800 shadow-sm focus:border-[#8CA9FF] focus:outline-none focus:ring-2 focus:ring-[#8CA9FF]/20 transition-all cursor-pointer"
+        >
+          <option value="">{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+          <svg className="h-4 w-4 text-[#8CA9FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+
+  const RadioGroup = ({
+    label,
+    value,
+    options,
+    onChange,
+    icon: Icon,
+  }: {
+    label: string
+    value: string
+    options: string[]
+    onChange: (val: string) => void
+    icon: any
+  }) => (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+        <Icon className="h-4 w-4 text-[#8CA9FF]" />
+        {label}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
+              value === opt
+                ? 'bg-[#8CA9FF] text-white shadow-md shadow-[#8CA9FF]/25'
+                : 'border border-[#AAC4F5]/40 bg-white text-slate-600 hover:border-[#8CA9FF]/60 hover:bg-[#AAC4F5]/10'
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
@@ -240,266 +219,201 @@ export default function GenerateQuestionsPage() {
           <div>
             <h1 className="mb-2 bg-gradient-to-r from-[#8CA9FF] to-blue-600 bg-clip-text text-4xl font-bold text-transparent lg:text-5xl">Generate Questions</h1>
             <p className="text-lg text-slate-600">
-              Create custom MCQs using our interactive chat interface
+              Create custom MCQs using our interactive form
             </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-            <div className="rounded-xl bg-slate-50 px-3 py-2">
-              <p className="text-xs text-slate-500">Current Step</p>
-              <p className="text-sm font-semibold text-slate-900">{step + 1}/{steps.length}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-2">
-              <p className="text-xs text-slate-500">Messages</p>
-              <p className="text-sm font-semibold text-slate-900">{messages.length}</p>
-            </div>
           </div>
         </div>
 
         <div className="rounded-[2rem] border border-slate-200/50 bg-white/70 p-6 shadow-2xl backdrop-blur-xl lg:min-h-[calc(100vh-12.5rem)] lg:p-8">
-        <div className="grid gap-6 lg:grid-cols-12">
-          <div className="space-y-6 self-start lg:sticky lg:top-28 lg:col-span-3">
-            <Card className="border border-slate-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-                  <History className="h-5 w-5 text-[#8CA9FF]" />
-                  Chat History
-                </CardTitle>
-                <CardDescription className="text-slate-600">
-                  Full conversation timeline
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
-                  {messages.map((message, index) => (
-                    <div
-                      key={`${message.type}-${index}`}
-                      className={`rounded-xl border px-3 py-2 ${
-                        message.type === 'user'
-                          ? 'border-[#8CA9FF]/35 bg-[#8CA9FF]/8'
-                          : 'border-slate-200 bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${
-                          message.type === 'user' ? 'text-[#8CA9FF]' : 'text-slate-500'
-                        }`}>
-                          {message.type === 'user' ? 'You' : 'Assistant'}
-                        </span>
-                        <span className="text-[11px] text-slate-400" suppressHydrationWarning>
-                          {isMounted
-                            ? message.timestamp.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : '--:--'}
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-700">
-                        {message.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-slate-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-900">Progress Tracker</CardTitle>
-                <CardDescription className="text-slate-600">Live completion journey</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {steps.map((s, index) => (
-                  <div
-                    key={index}
-                      className={`flex items-center gap-3 rounded-xl p-2 transition-all duration-300 ${
-                        index <= step ? 'bg-[#AAC4F5]/20' : 'opacity-50'
-                      }`}
-                  >
-                      <div
-                        className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                          index < step
-                            ? 'bg-[#8CA9FF] text-white'
-                            : index === step
-                              ? 'bg-[#AAC4F5] text-slate-900'
-                              : 'bg-[#FFF2C6] text-slate-600'
-                        }`}
-                      >
-                        {index < step ? '✓' : index + 1}
-                      </div>
-                      <span className="text-sm font-medium text-slate-800">{s.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
-
-          <div className="lg:col-span-6">
-            <Card className="flex h-[680px] lg:h-[calc(100vh-18rem)] min-h-[620px] flex-col border border-slate-100 bg-white shadow-sm">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-slate-900">Question Generation Assistant</CardTitle>
-                <CardDescription className="text-slate-600">Let's create your MCQs together</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.22, ease: 'easeOut' }}
-                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs rounded-2xl px-4 py-3 lg:max-w-md ${
-                        message.type === 'user'
-                          ? 'rounded-br-md bg-[#8CA9FF] text-white'
-                          : 'rounded-bl-md border border-[#AAC4F5]/25 bg-white text-slate-800'
-                      }`}
-                    >
-                      <p className="text-base leading-relaxed">{message.content}</p>
-                      <span className="mt-1 block text-xs opacity-70" suppressHydrationWarning>
-                        {isMounted
-                          ? message.timestamp.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '--:--'}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start">
-                    <div className="rounded-2xl rounded-bl-md border border-[#AAC4F5]/25 bg-white px-4 py-3">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-[#8CA9FF] rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-[#8CA9FF] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-[#8CA9FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </CardContent>
-              <div className="border-t border-slate-100 p-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSendMessage()
-                      }
-                    }}
-                    placeholder="Type your response..."
-                    className="text-baseborder-[#AAC4F5]/40 bg-white/80 text-slate-800 shadow-[0_8px_25px_rgba(15,23,42,0.08)] backdrop-blur-md placeholder:text-slate-500 focus:ring-2 focus:ring-[#8CA9FF]/50"
-                    disabled={loading}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={loading || !inputValue.trim()}
-                    className="bg-[#8CA9FF] text-white shadow-[0_10px_24px_rgba(140,169,255,0.45)] transition-all duration-300 hover:bg-[#7F9DFA] hover:scale-[1.03]"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-6 self-start lg:sticky lg:top-28 lg:col-span-3">
-            <Card className="border border-slate-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-900">Inspiration</CardTitle>
-                <CardDescription className="text-slate-600">Quick start templates</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {quickTemplates.map((template, index) => (
-                    <motion.button
-                      key={template}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.2 }}
-                      onClick={() => setInputValue(template)}
-                      className="group flex w-full items-start justify-between rounded-xl border border-[#FFF2C6] bg-[#FFF8DE] p-3 text-left transition-all duration-300 hover:border-[#8CA9FF]/60"
-                    >
-                      <span className="text-base text-slate-700">{template}</span>
-                      <Sparkles className="mt-0.5 h-4 w-4 text-[#8CA9FF] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    </motion.button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-slate-100 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-900">Live Blueprint</CardTitle>
-                <CardDescription className="text-slate-600">Parameters update in real time</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {blueprintItems.map((item) => {
-                  const Icon = item.icon
-                  return item.value ? (
-                    <motion.div
-                      key={item.key}
-                      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#8CA9FF]/50 bg-[#AAC4F5]/25 px-3 py-1.5 text-sm font-medium text-slate-800"
-                    >
-                      <Icon className="h-3.5 w-3.5 text-[#8CA9FF]" />
-                      <span>{item.label}: {item.value}</span>
-                    </motion.div>
-                  ) : (
-                    <div
-                      key={item.key}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[#AAC4F5]/70 bg-[#FFF8DE]/65 px-3 py-1.5 text-xs text-slate-500"
-                    >
-                      <Icon className="h-3.5 w-3.5 text-[#AAC4F5]" />
-                      <span>{item.label}</span>
-                    </div>
-                  )
-                })}
-              </CardContent>
-            </Card>
-
-            {/* Generated Questions Preview */}
-            {generatedQuestions.length > 0 && (
+          <div className="grid gap-6 lg:grid-cols-12">
+            
+            {/* LEFT: Form */}
+            <div className="lg:col-span-5 space-y-6">
               <Card className="border border-slate-100 bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg text-slate-900">Generated Questions</CardTitle>
-                  <CardDescription className="text-slate-600">{generatedQuestions.length} questions ready</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                    <Sparkles className="h-5 w-5 text-[#8CA9FF]" />
+                    Question Configuration
+                  </CardTitle>
+                  <CardDescription className="text-slate-600">
+                    Fill in the details to generate your MCQs
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="max-h-48 overflow-y-auto space-y-2">
-                    {generatedQuestions.slice(0, 3).map((q, i) => (
-                      <div key={i} className="rounded-lg border border-[#FFF2C6] bg-[#FFF8DE] p-2 text-xs text-slate-700 truncate">
-                        {i + 1}. {q}
-                      </div>
-                    ))}
-                    {generatedQuestions.length > 3 && (
-                      <p className="text-xs text-slate-500 text-center py-2">
-                        +{generatedQuestions.length - 3} more questions
-                      </p>
-                    )}
+                <CardContent className="space-y-5">
+                  
+                  {/* Subject - Drop Down */}
+                  <SelectField
+                    label="Subject"
+                    value={formData.subject}
+                    options={subjects}
+                    onChange={(val) => setFormData(prev => ({ ...prev, subject: val }))}
+                    icon={BookOpen}
+                  />
+
+                  {/* Topic - Text Input */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                      <Target className="h-4 w-4 text-[#8CA9FF]" />
+                      Topic
+                    </label>
+                    <Input
+                      value={formData.topic}
+                      onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                      placeholder="e.g. Kinematics, Organic Chemistry, Calculus..."
+                      className="rounded-xl border-[#AAC4F5]/40 bg-white text-slate-800 placeholder:text-slate-400 focus:border-[#8CA9FF] focus:ring-2 focus:ring-[#8CA9FF]/20"
+                    />
                   </div>
+
+                  {/* Question Type - Radio */}
+                  <RadioGroup
+                    label="Question Type"
+                    value={formData.type}
+                    options={questionTypes}
+                    onChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
+                    icon={BrainCircuit}
+                  />
+
+                  {/* Difficulty - Radio */}
+                  <RadioGroup
+                    label="Difficulty"
+                    value={formData.difficulty}
+                    options={difficulties}
+                    onChange={(val) => setFormData(prev => ({ ...prev, difficulty: val }))}
+                    icon={Flame}
+                  />
+
+                  {/* Grade - Radio */}
+                  <RadioGroup
+                    label="Grade"
+                    value={formData.grade}
+                    options={grades}
+                    onChange={(val) => setFormData(prev => ({ ...prev, grade: val }))}
+                    icon={GraduationCap}
+                  />
+
+                  {/* Number of Questions - Select */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                      <Hash className="h-4 w-4 text-[#8CA9FF]" />
+                      Number of Questions
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={formData.numQuestions}
+                      onChange={(e) => setFormData(prev => ({ ...prev, numQuestions: e.target.value }))}
+                      placeholder="e.g. 5"
+                      className="rounded-xl border-[#AAC4F5]/40 bg-white text-slate-800 placeholder:text-slate-400 focus:border-[#8CA9FF] focus:ring-2 focus:ring-[#8CA9FF]/20"
+                    />
+                  </div>
+
+                  {/* Additional Prompt - Textarea */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                      <FileText className="h-4 w-4 text-[#8CA9FF]" />
+                      Additional Requirements <span className="text-slate-400 font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                      value={formData.additionalPrompt}
+                      onChange={(e) => setFormData(prev => ({ ...prev, additionalPrompt: e.target.value }))}
+                      placeholder="Any specific requirements, constraints, or focus areas..."
+                      rows={3}
+                      className="w-full resize-none rounded-xl border border-[#AAC4F5]/40 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#8CA9FF] focus:outline-none focus:ring-2 focus:ring-[#8CA9FF]/20 transition-all"
+                    />
+                  </div>
+
+                  {/* Generate Button */}
                   <Button
-                    onClick={handleDownload}
-                    className="w-full bg-[#AAC4F5] hover:bg-[#98B7EC] text-slate-900 text-sm"
+                    onClick={handleGenerate}
+                    disabled={loading}
+                    className="w-full bg-[#8CA9FF] text-white shadow-[0_10px_24px_rgba(140,169,255,0.45)] transition-all duration-300 hover:bg-[#7F9DFA] hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 h-11 text-base font-semibold"
                   >
-                    <Download className="w-3 h-3 mr-2" />
-                    Download All
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Questions
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
-            )}
+            </div>
+
+            
+            {/* RIGHT: Blueprint + Results */}
+            <div className="space-y-6 self-start lg:sticky lg:top-28 lg:col-span-7">
+              <Card className="border border-slate-100 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg text-slate-900">Live Blueprint</CardTitle>
+                  <CardDescription className="text-slate-600">Parameters update in real time</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                  {blueprintItems.map((item) => {
+                    const Icon = item.icon
+                    return item.value ? (
+                      <motion.div
+                        key={item.key}
+                        initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[#8CA9FF]/50 bg-[#AAC4F5]/25 px-3 py-1.5 text-sm font-medium text-slate-800"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-[#8CA9FF]" />
+                        <span>{item.label}: {item.value}</span>
+                      </motion.div>
+                    ) : (
+                      <div
+                        key={item.key}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[#AAC4F5]/70 bg-[#FFF8DE]/65 px-3 py-1.5 text-xs text-slate-500"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-[#AAC4F5]" />
+                        <span>{item.label}</span>
+                      </div>
+                    )
+                  })}
+                </CardContent>
+              </Card>
+
+              {/* Generated Questions Preview - NO TRUNCATE */}
+              {generatedQuestions.length > 0 && (
+                <Card className="border border-slate-100 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-slate-900">Generated Questions</CardTitle>
+                    <CardDescription className="text-slate-600">{generatedQuestions.length} questions ready</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="max-h-96 overflow-y-auto space-y-3 pr-1">
+                      {generatedQuestions.map((q, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="rounded-lg border border-[#FFF2C6] bg-[#FFF8DE] p-3 text-sm text-slate-700 leading-relaxed"
+                        >
+                          <span className="font-semibold text-[#8CA9FF] mr-1">{i + 1}.</span>
+                          {q}
+                        </motion.div>
+                      ))}
+                    </div>
+                    <Button
+                      onClick={handleDownload}
+                      className="w-full bg-[#AAC4F5] hover:bg-[#98B7EC] text-slate-900 text-sm"
+                    >
+                      <Download className="w-3 h-3 mr-2" />
+                      Download All
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </motion.div>
     </div>

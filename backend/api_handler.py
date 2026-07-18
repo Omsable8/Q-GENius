@@ -166,7 +166,7 @@ def get_profile():
             return jsonify({'success':False, 'message': resp_user_data.get('message')}),500
         
         user_data = resp_user_data.get('user_data')[0]
-        logger.log('INFO',f'userdata: {user_data}')
+        # logger.log('INFO',f'userdata: {user_data}')
         user_dict = {'name':user_data[0], 'email':user_data[1]}
         return jsonify(user_dict),200
      
@@ -285,7 +285,7 @@ def refresh():
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
     # No auth header
-    return redirect(app.config['BASE_URL'] + '/api/signup', 401)
+    return jsonify({'message': 'unauthorized'}), 401
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
