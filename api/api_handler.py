@@ -173,7 +173,7 @@ def get_profile():
             return jsonify({'success':False, 'message': resp_user_data.get('message')}),500
         
         user_data = resp_user_data.get('user_data')[0]
-        logger.log('INFO',f'userdata: {user_data}')
+        # logger.log('INFO',f'userdata: {user_data}')
         user_dict = {'name':user_data[0], 'email':user_data[1]}
         return jsonify(user_dict),200
      
