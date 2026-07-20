@@ -12,6 +12,7 @@ import { Sparkles, Star, Copy, Download, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
+import { ErrorBanner } from '@/components/error-banner'
 
 interface GeneratedOption {
   type: 'fact' | 'process' | 'accuracy' | 'correct'
@@ -26,6 +27,7 @@ interface GenerationResult {
 
 export default function GenerateOptionsPage() {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [rateLimitError, setRateLimitError] = useState(false)
   const [showRateLimitDialog, setShowRateLimitDialog] = useState(false)
   const [formData, setFormData] = useState({
@@ -71,7 +73,7 @@ export default function GenerateOptionsPage() {
     e.preventDefault()
 
     if (!formData.question.trim()) {
-      toast.error('Please enter a question')
+      setError('Please enter a question')
       return
     }
 
@@ -91,13 +93,13 @@ export default function GenerateOptionsPage() {
       if (response.status === 429) {
         setRateLimitError(true)
         setShowRateLimitDialog(true)
-        toast.error('Rate limit exceeded. Please try again later.')
+        setError('Rate limit exceeded. Please try again later.')
         return
       }
 
       if (!response.ok) {
         const data = await response.json()
-        toast.error(data.message || 'Failed to generate options')
+        setError(data.message || 'Failed to generate options')
         return
       }
 
@@ -107,7 +109,7 @@ export default function GenerateOptionsPage() {
       setRatings({})
       toast.success('Options generated successfully!')
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+      setError('An error occurred. Please try again.')
       console.error(error)
     } finally {
       setLoading(false)
@@ -190,6 +192,7 @@ ${results.options.map(opt => `${opt.type.charAt(0).toUpperCase() + opt.type.slic
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="self-start sticky top-28 lg:col-span-1">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <Card className="border border-[#AAC4F5]/30 bg-white shadow-sm">
               <CardHeader>
                 <CardTitle className="text-slate-900">Generate Distractors</CardTitle>

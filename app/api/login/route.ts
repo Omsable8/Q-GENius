@@ -17,17 +17,11 @@ export async function POST(request: Request) {
       'body': JSON.stringify({email, password})
     })
 
-    
-    if(!response.ok){
-      console.log("LOGIN FAILED")
-      return response
-    }
-
     if(response.status === 401){
       return Response.json(
         {
           'success':false,
-          'message': 'Incorrect Password'
+          'message': 'Incorrect Password or Email. Please Try again!'
         },
         {status:401}
       )
@@ -42,6 +36,10 @@ export async function POST(request: Request) {
       )
     }
     if(response.status===200){
+      return response
+    }
+    if(!response.ok){
+      console.log("LOGIN FAILED")
       return response
     }
   } catch (error) {

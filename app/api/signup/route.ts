@@ -17,10 +17,7 @@ export async function POST(request: Request) {
       'body': JSON.stringify({username,email,password})
     
     })
-    if(!response.ok){
-      return response
-    }
-
+    
     if(response.status===405){
       console.log('Account already exists in DB.')
       return response
@@ -30,7 +27,10 @@ export async function POST(request: Request) {
       return response
     }
     if(response.status===200){
-        return response
+      return response
+    }
+    if(!response.ok){
+      return response
     }
   } catch (error) {
     console.error('Signup error:', error)
