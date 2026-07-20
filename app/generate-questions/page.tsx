@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { Sparkles, Send, Download, BookOpen, Target, Flame, GraduationCap, Hash, FileText, BrainCircuit, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
+import { ErrorBanner } from '@/components/error-banner'
 
 const API_BASE_URL = 'http://localhost:5000'
 
@@ -25,6 +26,7 @@ interface FormState {
 export default function GenerateQuestionsPage() {
   
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormState>({
     subject: '',
     topic: '',
@@ -55,7 +57,7 @@ export default function GenerateQuestionsPage() {
 
   const handleGenerate = async () => {
     if (!formData.subject || !formData.topic || !formData.type || !formData.difficulty || !formData.grade) {
-      toast.error('Please fill in all required fields')
+      setError('Please fill in all required fields')
       return
     }
 
@@ -76,9 +78,8 @@ export default function GenerateQuestionsPage() {
 
       sessionStorage.removeItem('user_history')
     } catch (error) {
-      toast.error('Failed to generate questions')
+      setError('Failed to generate questions. Error: '+error)
       console.error(error)
-      toast.error('Failed to generate questions')
     } finally {
       setLoading(false)
     }
@@ -341,6 +342,7 @@ export default function GenerateQuestionsPage() {
                       </>
                     )}
                   </Button>
+                  <ErrorBanner message={error} onDismiss={() => setError(null)} />
                 </CardContent>
               </Card>
             </div>

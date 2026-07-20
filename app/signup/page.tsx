@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
+import { ErrorBanner } from '@/components/error-banner'
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -28,13 +30,13 @@ export default function SignupPage() {
 
     // Validation
     if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error('Please fill in all fields')
+      setError('Please fill in all fields')
       setLoading(false)
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match')
+      setError('Passwords do not match')
       setLoading(false)
       return
     }
@@ -54,17 +56,16 @@ export default function SignupPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        toast.error(data.message || 'Signup failed')
+        setError(data.message || 'Signup failed')
         return
       }
-      // Store user token in localStorage for now
-      // localStorage.setItem('token',data)
-      // console.log(data.token)
+
       toast.success('Account created successfully!')
       // Redirect to login or dashboard
       window.location.href = '/dashboard'
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+
+      setError('An error occurred. Please try again.')
       console.error(error)
     } finally {
       setLoading(false)
@@ -88,6 +89,7 @@ export default function SignupPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="username">Username</FieldLabel>

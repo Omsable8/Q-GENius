@@ -4,12 +4,6 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { email, password } = body
 
-    // TODO: Implement Supabase authentication
-    // This should:
-    // 1. Validate email and password
-    // 2. Call Supabase auth API
-    // 3. Return session token/JWT
-    // 4. Set HTTP-only cookie
     const response = await fetch(API_URL+'/api/login',{
       'headers':{'Content-Type':'application/json'},
       'credentials':'include',
@@ -17,17 +11,11 @@ export async function POST(request: Request) {
       'body': JSON.stringify({email, password})
     })
 
-    
-    if(!response.ok){
-      console.log("LOGIN FAILED")
-      return response
-    }
-
     if(response.status === 401){
       return Response.json(
         {
           'success':false,
-          'message': 'Incorrect Password'
+          'message': 'Incorrect Password or Email. Please Try again!'
         },
         {status:401}
       )
@@ -42,6 +30,10 @@ export async function POST(request: Request) {
       )
     }
     if(response.status===200){
+      return response
+    }
+    if(!response.ok){
+      console.log("LOGIN FAILED")
       return response
     }
   } catch (error) {

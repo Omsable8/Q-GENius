@@ -5,11 +5,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
-import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
+import { ErrorBanner } from '@/components/error-banner'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,20 +24,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
+    setError(null) // clear previous errors
 
     // Validation
     if (!formData.email || !formData.password) {
-      toast.error('Please fill in all fields')
+      setError('Please fill in all fields')
       setLoading(false)
       return
     }
 
     try {
-      // API call placeholder - backend will handle Supabase auth
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials:'include',
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -46,14 +47,15 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        toast.error(data.message || 'Login failed')
+        setError(data.message || 'Login failed. Please check your credentials and try again.')
         return
       }
-      toast.success('Login successful!')
-      // Redirect to dashboard
+
+      // Success — clear error and redirect
+      setError(null)
       window.location.href = '/dashboard'
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+      setError('Network error. Please check your connection and try again.')
       console.error(error)
     } finally {
       setLoading(false)
@@ -77,6 +79,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="email">Email Address</FieldLabel>

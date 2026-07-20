@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Sparkles, ArrowLeft, BookOpen, Zap, X, Calendar, Target, Flame, GraduationCap, Hash, FileText, CheckCircle } from 'lucide-react'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
+import { ErrorBanner } from '@/components/error-banner'
 
 interface HistoryItem {
   id: string
@@ -48,6 +49,7 @@ export default function HistoryPage() {
   const [viewData, setViewData] = useState<ViewData | null>(null)
   const [viewType, setViewType] = useState<'questions' | 'options'>('questions')
   const [viewLoading, setViewLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const formatTimeAgo = (dateInput: string | Date) => {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
@@ -100,6 +102,7 @@ export default function HistoryPage() {
         }
       } catch (error) {
         console.error('Failed to fetch history:', error)
+        setError('Failed to fetch history: '+error)
       } finally {
         setIsLoading(false)
       }
@@ -128,6 +131,7 @@ export default function HistoryPage() {
       }
     } catch (error) {
       console.error('Failed to fetch view data:', error)
+      setError('Failed to fetch view data: '+error)
     } finally {
       setViewLoading(false)
     }
@@ -218,6 +222,7 @@ export default function HistoryPage() {
         </div>
 
         {/* History List */}
+        <ErrorBanner message={error} onDismiss={() => setError(null)} />
         <div className="space-y-4">
           {isLoading ? (
             <div className="space-y-4">
